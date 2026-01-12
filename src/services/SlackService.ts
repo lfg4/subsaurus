@@ -1,5 +1,6 @@
-import { SlackFactory } from "../factories/SlackFactory"
-import type { SlackResponse, SlackInteractionPayload, SlackSubscriptionData } from "../types/slack"
+import { NextResponse } from 'next/server';
+import { SlackFactory } from '../factories/SlackFactory';
+import type { SlackSubscriptionData } from '../types/slack';
 
 enum SlackCommands {
     HELP = 'help',
@@ -9,151 +10,209 @@ enum SlackCommands {
 export class SlackService {
     constructor() {}
 
-    public async handleSlack(data: Record<string, unknown>): Promise<SlackResponse> {
-        const message = (data.text as string)?.split(' ') || [];
-        const action = message[0];
+    
+    public async handle(data: Record<string, unknown>) {
+        if (data.payload && typeof data.payload === 'object') {
+            return this.handleInteraction(data.payload as Record<string, unknown>);
+        }
+
+        return this.handleCommand(data);
+    }
+
+    private async handleCommand(data: Record<string, unknown>) {
+        const text = (data.text as string) || '';
+        const command = text.split(' ')[0];
         
-        switch (action) {
+        switch (command) {
             case SlackCommands.HELP:
-                return SlackFactory.getHelpMessage();
+                return this.respondWithBlocks(SlackFactory.getHelpMessage());
+                
             case SlackCommands.CREATE:
-                return {
-                    type: 'modal',
-                    trigger_id: data.trigger_id as string,
-                    view: SlackFactory.getCreateSubscriptionModal()
-                };
+                return this.openModal(
+                    data.trigger_id as string,
+                    SlackFactory.getCreateSubscriptionModal()
+                );
+                
             default:
-                return SlackFactory.getErrorMessage('Command not found');
+                return this.respondWithBlocks(
+                    SlackFactory.getErrorMessage('Command not found')
+                );
         }
     }
 
-    public async handleInteraction(payload: SlackInteractionPayload) {
-        if (payload.type === 'view_submission') {
-            return this.handleViewSubmission(payload);
+    private async handleInteraction(payload: Record<string, unknown>) {
+        const type = payload.type as string;
+
+        if (type === 'view_submission') {
+            return this.handleModalSubmission(payload);
         }
         
-        return { response_action: 'clear' };
+        return NextResponse.json({ response_action: 'clear' });
     }
 
-    private async handleViewSubmission(payload: SlackInteractionPayload) {
+    private async handleModalSubmission(payload: Record<string, unknown>) {
         try {
-            const values = payload.view?.state.values;
-            
-            console.log('📋 Form values:', JSON.stringify(values, null, 2));
+            const view = payload.view as any;
+            const values = view?.state?.values;
             
             if (!values) {
-                return { 
+                return NextResponse.json({ 
                     response_action: 'errors', 
                     errors: { name_block: 'Invalid form submission' } 
-                };
+                });
             }
 
-            const nameValue = values.name_block?.name_input as any;
-            const priceValue = values.price_block?.price_input as any;
-            const dateValue = values.date_block?.date_input as any;
-            const usersValue = values.users_block?.users_select as any;
-            const projectsValue = values.projects_block?.projects_select as any;
-
-            if (!nameValue?.value) {
-                return {
+            const validationResult = this.validateAndExtractFormData(values);
+            
+            if ('errors' in validationResult) {
+                return NextResponse.json({
                     response_action: 'errors',
-                    errors: { name_block: 'Name is required' }
-                };
+                    errors: validationResult.errors
+                });
             }
 
-            if (!priceValue?.value) {
-                return {
-                    response_action: 'errors',
-                    errors: { price_block: 'Price is required' }
-                };
-            }
-
-            const price = parseFloat(priceValue.value);
-            if (Number.isNaN(price) || price <= 0) {
-                return {
-                    response_action: 'errors',
-                    errors: { price_block: 'Price must be a valid number greater than 0' }
-                };
-            }
-
-            if (!dateValue?.selected_date) {
-                return {
-                    response_action: 'errors',
-                    errors: { date_block: 'Date is required' }
-                };
-            }
-
-            // Extraer usuarios y proyectos (opcionales)
-            const selectedUsers = usersValue?.selected_users || [];
-            const selectedProjects = projectsValue?.selected_options?.map((o: any) => o.value) || [];
-
-            const subscription: SlackSubscriptionData = {
-                name: nameValue.value,
-                price: price,
-                renewalDate: dateValue.selected_date,
-                users: selectedUsers,
-                projects: selectedProjects
-            };
-
+            const subscription = validationResult.data;
+            
             console.log('✅ Nueva suscripción:', subscription);
 
-            // TODO: Aquí guardarías en la base de datos
+            // TODO: Guardar en base de datos
             // await subscriptionRepository.create(subscription);
 
-            // Enviar notificación a cada usuario (opcional)
-            if (selectedUsers.length > 0) {
-                await this.notifyUsers(subscription);
-            }
             
-            return {
+            return NextResponse.json({
                 response_action: 'update',
                 view: SlackFactory.getSuccessModal(subscription)
-            };
+            });
         } catch (error) {
-            console.error('❌ Error in handleViewSubmission:', error);
-            return {
+            console.error('❌ Error in handleModalSubmission:', error);
+            return NextResponse.json({
                 response_action: 'errors',
                 errors: {
                     name_block: 'An error occurred. Please try again.'
                 }
-            };
+            });
         }
     }
 
-    // Método para notificar a usuarios (opcional - para usar en el futuro)
-    private async notifyUsers(subscription: SlackSubscriptionData) {
+    private validateAndExtractFormData(values: Record<string, any>) {
+        const nameValue = values.name_block?.name_input;
+        const priceValue = values.price_block?.price_input;
+        const dateValue = values.date_block?.date_input;
+        const usersValue = values.users_block?.users_select;
+        const projectsValue = values.projects_block?.projects_select;
+
+        if (!nameValue?.value) {
+            return { errors: { name_block: 'Name is required' } };
+        }
+
+        if (!priceValue?.value) {
+            return { errors: { price_block: 'Price is required' } };
+        }
+
+        const price = parseFloat(priceValue.value);
+        if (Number.isNaN(price) || price <= 0) {
+            return { 
+                errors: { price_block: 'Price must be a valid number greater than 0' } 
+            };
+        }
+
+        if (!dateValue?.selected_date) {
+            return { errors: { date_block: 'Date is required' } };
+        }
+
+        const users = usersValue?.selected_users || [];
+        const projects = projectsValue?.selected_options?.map((o: any) => o.value) || [];
+
+        return {
+            data: {
+                name: nameValue.value,
+                price: price,
+                renewalDate: dateValue.selected_date,
+                users: users,
+                projects: projects
+            } as SlackSubscriptionData
+        };
+    }
+
+    private async openModal(triggerId: string, modalView: any) {
         const slackToken = process.env.SLACK_BOT_TOKEN;
         
         if (!slackToken) {
-            console.error('SLACK_BOT_TOKEN not configured');
+            console.error('❌ SLACK_BOT_TOKEN not configured');
+            return this.respondWithText(':x: Error: Slack bot token not configured');
+        }
+
+        try {
+            const response = await fetch('https://slack.com/api/views.open', {
+                method: 'POST',
+                headers: {
+                    'Authorization': `Bearer ${slackToken}`,
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    trigger_id: triggerId,
+                    view: modalView
+                })
+            });
+
+            const result = await response.json();
+            
+            if (!result.ok) {
+                console.error('❌ Error opening modal:', result.error);
+                return this.respondWithText(':x: Error opening modal');
+            }
+
+            return new NextResponse('', { status: 200 });
+        } catch (error) {
+            console.error('❌ Error calling Slack API:', error);
+            return this.respondWithText(':x: Error connecting to Slack');
+        }
+    }
+
+    
+    private async notifyUsers(userIds: string[], message: string) {
+        const slackToken = process.env.SLACK_BOT_TOKEN;
+        
+        if (!slackToken) {
+            console.error('❌ SLACK_BOT_TOKEN not configured');
             return;
         }
 
-        // Enviar mensaje a cada usuario individualmente
-        for (const userId of subscription.users) {
+        for (const userId of userIds) {
             try {
-                const response = await fetch('https://slack.com/api/chat.postMessage', {
+                 await fetch('https://slack.com/api/chat.postMessage', {
                     method: 'POST',
                     headers: {
                         'Authorization': `Bearer ${slackToken}`,
                         'Content-Type': 'application/json'
                     },
                     body: JSON.stringify({
-                        channel: userId, // 👈 Un solo ID a la vez
-                        text: `Has sido añadido a la suscripción: *${subscription.name}* (€${subscription.price})`
+                        channel: userId,
+                        text: message
                     })
                 });
 
-                const result = await response.json();
                 
-                if (result.ok) {
-                    console.log(`✅ Notificación enviada a ${userId}`);
-                } else {
-                    console.error(`❌ Error enviando a ${userId}:`, result.error);
-                }
+                
+                
             } catch (error) {
                 console.error(`❌ Error notificando a ${userId}:`, error);
             }
         }
+    }
+
+    
+    private respondWithText(text: string) {
+        return NextResponse.json({ 
+            response_type: 'ephemeral',
+            text: text
+        });
+    }
+
+    private respondWithBlocks(blocks: any) {
+        return NextResponse.json({ 
+            response_type: 'ephemeral',
+            ...blocks
+        });
     }
 }
