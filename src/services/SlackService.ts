@@ -1,3 +1,5 @@
+import { SlackFactory } from "../factories/SlackFactory"
+
 export class SlackService {
     constructor() {}
 
@@ -6,7 +8,7 @@ export class SlackService {
         const action = message[0]
         switch (action) {
             case 'help':
-                return 'Help command'
+                return SlackFactory.getHelpMessage()
             default:
                 return ':x: Command not found'
         }
