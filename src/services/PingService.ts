@@ -2,7 +2,7 @@
 export class PingService {
     constructor() {}
   
-    public handlePing() {
+    public async handlePing() {
       return {
         status: 'ok',
         message: 'pong',
