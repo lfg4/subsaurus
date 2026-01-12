@@ -25,7 +25,7 @@ export async function POST(request: NextRequest) {
       
       // Responder rápidamente a Slack (tienen timeout de 3 segundos)
       return NextResponse.json({ 
-        response_type: 'in_channel', // o 'ephemeral' para mensaje privado
+        response_type: 'ephemeral', // o 'ephemeral' para mensaje privado
         text: '¡Recibido! 👍'
       });
     } catch (error) {
