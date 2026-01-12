@@ -183,13 +183,6 @@ export class SlackFactory {
                                     "text": "Yearly"
                                 },
                                 "value": "YEARLY"
-                            },
-                            {
-                                "text": {
-                                    "type": "plain_text",
-                                    "text": "Custom"
-                                },
-                                "value": "CUSTOM"
                             }
                         ]
                     },
