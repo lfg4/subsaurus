@@ -20,11 +20,20 @@ export async function POST(request: NextRequest) {
       
         const slackService = getSlackService();
         const response = await slackService.handleSlack(data);
-      
-      return NextResponse.json({ 
-        response_type: 'ephemeral',
-        text: response
-      });
+        
+        // Si la respuesta es un string, convertirlo a formato de texto
+        if (typeof response === 'string') {
+          return NextResponse.json({ 
+            response_type: 'ephemeral',
+            text: response
+          });
+        }
+        
+        // Si la respuesta tiene blocks u otro formato, devolverlo tal cual
+        return NextResponse.json({ 
+          response_type: 'ephemeral',
+          ...response
+        });
     } catch (error) {
       console.error('Error en Slack webhook:', error);
       return NextResponse.json(

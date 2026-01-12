@@ -4,13 +4,14 @@ export class SlackService {
     constructor() {}
 
     public async handleSlack(data: any) {
-        const message = data.text.split(' ')
-        const action = message[0]
+        const message = data.text?.split(' ') || [];
+        const action = message[0];
+        
         switch (action) {
             case 'help':
-                return SlackFactory.getHelpMessage()
+                return SlackFactory.getHelpMessage();
             default:
-                return ':x: Command not found'
+                return SlackFactory.getErrorMessage('Command not found');
         }
     }
 }
