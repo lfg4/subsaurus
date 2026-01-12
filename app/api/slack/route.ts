@@ -25,8 +25,21 @@ export async function POST(request: NextRequest) {
       
       // Si es una interacción (modal submission, button click, etc)
       if (data.payload && typeof data.payload === 'object') {
-        const response = await slackService.handleInteraction(data.payload as { type: string; [key: string]: unknown });
-        return NextResponse.json(response);
+        console.log('📥 Interaction received:', JSON.stringify(data.payload, null, 2));
+        try {
+          const response = await slackService.handleInteraction(data.payload as { type: string; [key: string]: unknown });
+          console.log('📤 Interaction response:', JSON.stringify(response, null, 2));
+          return NextResponse.json(response);
+        } catch (error) {
+          console.error('❌ Error handling interaction:', error);
+          // Responder con un error visible en el modal
+          return NextResponse.json({
+            response_action: 'errors',
+            errors: {
+              name_block: 'Error processing form. Check server logs.'
+            }
+          });
+        }
       }
       
       // Si es un slash command
