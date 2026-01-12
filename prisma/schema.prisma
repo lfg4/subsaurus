@@ -12,9 +12,54 @@ datasource db {
 
 model User {
   id        Int      @id @default(autoincrement())
-  email     String   @unique
-  name      String?
-  createdAt DateTime @default(now())
-  
+  email     String?  @unique @map("email")
+  name      String?  @map("name")
+  createdAt DateTime @default(now()) @map("createdAt")
+
+  @@map("User")
 }
 
+model SlackUser {
+  id               Int      @id @default(autoincrement())
+  slackUserId      String   @unique @map("slack_user_id")
+  slackWorkspaceId String   @map("slack_workspace_id")
+  displayName      String?  @map("display_name")
+  email            String?  @map("email")
+  avatarUrl        String?  @map("avatar_url")
+  createdAt        DateTime @default(now()) @map("created_at")
+
+  subscriptionUsers SubscriptionUser[]
+
+  @@map("slack_users")
+}
+
+model Subscription {
+  id                  Int      @id @default(autoincrement())
+  slackWorkspaceId    String   @map("slack_workspace_id")
+  createdBySlackUser  String   @map("created_by_slack_user")
+  name                String
+  project             String?
+  renewalCycle        String   @map("renewal_cycle")
+  renewalDate         DateTime @map("renewal_date")
+  costAmount          Float    @map("cost_amount")
+  costCurrency        String   @map("cost_currency")
+  createdAt           DateTime @default(now()) @map("created_at")
+  updatedAt           DateTime @updatedAt @map("updated_at")
+
+  subscriptionUsers SubscriptionUser[]
+
+  @@map("subscriptions")
+}
+
+model SubscriptionUser {
+  id             Int      @id @default(autoincrement())
+  slackWorkspaceId String @map("slack_workspace_id")
+  subscriptionId Int      @map("subscription_id")
+  slackUserId    String   @map("slack_user_id")
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+  slackUser    SlackUser    @relation(fields: [slackUserId], references: [slackUserId], onDelete: Cascade)
+
+  @@map("subscription_users")
+}

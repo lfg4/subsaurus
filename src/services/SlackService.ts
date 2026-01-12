@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { SlackFactory } from '../factories/SlackFactory';
 import type { SlackSubscriptionData } from '../types/slack';
+import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { CreateSubscriptionDto } from '../dtos/subscription.dto';
 
 enum SlackCommands {
     HELP = 'help',
@@ -8,7 +10,7 @@ enum SlackCommands {
 }
 
 export class SlackService {
-    constructor() {}
+    constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 
     
     public async handle(data: Record<string, unknown>) {
@@ -75,9 +77,21 @@ export class SlackService {
             
             console.log('✅ Nueva suscripción:', subscription);
 
-            // TODO: Guardar en base de datos
-            // await subscriptionRepository.create(subscription);
+            // Guardar en base de datos
+            const dto = new CreateSubscriptionDto({
+                name: subscription.name,
+                price: subscription.price,
+                renewalDate: subscription.renewalDate,
+                slackUserIds: subscription.users,
+                projects: subscription.projects
+            });
 
+            // Extraer workspace_id y user_id del payload
+            const workspaceId = (payload.team as any)?.id || 'unknown';
+            const userId = (payload.user as any)?.id || 'unknown';
+
+            const savedSubscription = await this.subscriptionRepository.create(dto, workspaceId, userId);
+            console.log('💾 Suscripción guardada con ID:', savedSubscription.id);
             
             return NextResponse.json({
                 response_action: 'update',
