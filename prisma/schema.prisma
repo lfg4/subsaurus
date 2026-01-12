@@ -36,7 +36,7 @@ model SlackUser {
 model Subscription {
   id                  Int      @id @default(autoincrement())
   slackWorkspaceId    String   @map("slack_workspace_id")
-  createdBySlackUser  String   @map("created_by_slack_user")
+  createdBySlackUser  String   @map("created_by_slack_user_id")
   name                String
   project             String?
   renewalCycle        String   @map("renewal_cycle")
