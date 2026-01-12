@@ -5,7 +5,7 @@ import type { SlackResponse, SlackModalResponse } from "@/src/types/slack";
 
 export async function POST(request: NextRequest) {
     try {
-        console.log('Slack webhook received');
+        console.log('🔔 Slack webhook received');
       const contentType = request.headers.get('content-type');
       
       let data: Record<string, unknown>;
@@ -20,6 +20,12 @@ export async function POST(request: NextRequest) {
         if (typeof data.payload === 'string') {
           data.payload = JSON.parse(data.payload) as Record<string, unknown>;
         }
+      }
+
+      // Slack URL Verification Challenge (cuando configuras la URL por primera vez)
+      if (data.type === 'url_verification' && data.challenge) {
+        console.log('✅ Responding to Slack URL verification challenge');
+        return NextResponse.json({ challenge: data.challenge });
       }
       
       const slackService = getSlackService();
