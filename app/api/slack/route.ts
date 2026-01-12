@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       
       return NextResponse.json({ 
         response_type: 'ephemeral',
-        text: response
+        text: JSON.stringify(response)
       });
     } catch (error) {
       console.error('Error en Slack webhook:', error);
