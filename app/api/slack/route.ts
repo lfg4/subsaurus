@@ -5,6 +5,7 @@ import type { SlackResponse, SlackModalResponse } from "@/src/types/slack";
 
 export async function POST(request: NextRequest) {
     try {
+        console.log('Slack webhook received');
       const contentType = request.headers.get('content-type');
       
       let data: Record<string, unknown>;
