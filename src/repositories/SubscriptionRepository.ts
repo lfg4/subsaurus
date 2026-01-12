@@ -10,7 +10,7 @@ export class SubscriptionRepository {
         createdBySlackUser: createdBy,
         name: dto.name,
         project: dto.projects[0] || null,
-        renewalCycle: 'monthly', // Por defecto
+        renewalCycle: 'MONTHLY', // Valores: 'MONTHLY', 'YEARLY', 'CUSTOM'
         renewalDate: new Date(dto.renewalDate),
         costAmount: dto.price,
         costCurrency: 'EUR',
