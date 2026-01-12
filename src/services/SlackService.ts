@@ -97,19 +97,13 @@ export class SlackService {
 
             console.log('✅ Nueva suscripción:', subscription);
 
-            const slackToken = process.env.SLACK_BOT_TOKEN;
+            // TODO: Aquí guardarías en la base de datos
+            // await subscriptionRepository.create(subscription);
 
-            await fetch('https://slack.com/api/chat.postMessage', {
-                method: 'POST',
-                headers: {
-                  'Authorization': `Bearer ${slackToken}`,
-                  'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                  channel: selectedUsers, // 👈 El user ID es el "canal" para DMs
-                  text: `🔔 ${subscription.name} se renueva en ${subscription.renewalDate} (€${subscription.price})`
-                })
-              })
+            // Enviar notificación a cada usuario (opcional)
+            if (selectedUsers.length > 0) {
+                await this.notifyUsers(subscription);
+            }
             
             return {
                 response_action: 'update',
@@ -123,6 +117,43 @@ export class SlackService {
                     name_block: 'An error occurred. Please try again.'
                 }
             };
+        }
+    }
+
+    // Método para notificar a usuarios (opcional - para usar en el futuro)
+    private async notifyUsers(subscription: SlackSubscriptionData) {
+        const slackToken = process.env.SLACK_BOT_TOKEN;
+        
+        if (!slackToken) {
+            console.error('SLACK_BOT_TOKEN not configured');
+            return;
+        }
+
+        // Enviar mensaje a cada usuario individualmente
+        for (const userId of subscription.users) {
+            try {
+                const response = await fetch('https://slack.com/api/chat.postMessage', {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${slackToken}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        channel: userId, // 👈 Un solo ID a la vez
+                        text: `Has sido añadido a la suscripción: *${subscription.name}* (€${subscription.price})`
+                    })
+                });
+
+                const result = await response.json();
+                
+                if (result.ok) {
+                    console.log(`✅ Notificación enviada a ${userId}`);
+                } else {
+                    console.error(`❌ Error enviando a ${userId}:`, result.error);
+                }
+            } catch (error) {
+                console.error(`❌ Error notificando a ${userId}:`, error);
+            }
         }
     }
 }
