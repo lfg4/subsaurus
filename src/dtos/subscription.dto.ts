@@ -1,6 +1,10 @@
+export type RenewalCycle = 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+
 export class CreateSubscriptionDto {
   name: string;
   price: number;
+  currency: string;
+  renewalCycle: RenewalCycle;
   renewalDate: string; // Formato: "YYYY-MM-DD"
   slackUserIds: string[];
   projects: string[];
@@ -8,12 +12,16 @@ export class CreateSubscriptionDto {
   constructor(data: {
     name: string;
     price: number;
+    currency: string;
+    renewalCycle: RenewalCycle;
     renewalDate: string;
     slackUserIds: string[];
     projects: string[];
   }) {
     this.name = data.name;
     this.price = data.price;
+    this.currency = data.currency;
+    this.renewalCycle = data.renewalCycle;
     this.renewalDate = data.renewalDate;
     this.slackUserIds = data.slackUserIds;
     this.projects = data.projects;

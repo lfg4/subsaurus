@@ -10,10 +10,10 @@ export class SubscriptionRepository {
         createdBySlackUser: createdBy,
         name: dto.name,
         project: dto.projects[0] || null,
-        renewalCycle: 'MONTHLY', // Valores: 'MONTHLY', 'YEARLY', 'CUSTOM'
+        renewalCycle: dto.renewalCycle,
         renewalDate: new Date(dto.renewalDate),
         costAmount: dto.price,
-        costCurrency: 'EUR',
+        costCurrency: dto.currency,
         subscriptionUsers: {
           create: dto.slackUserIds.map(userId => ({
             slackWorkspaceId: workspaceId,

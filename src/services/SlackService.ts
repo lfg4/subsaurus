@@ -81,6 +81,8 @@ export class SlackService {
             const dto = new CreateSubscriptionDto({
                 name: subscription.name,
                 price: subscription.price,
+                currency: subscription.currency,
+                renewalCycle: subscription.renewalCycle,
                 renewalDate: subscription.renewalDate,
                 slackUserIds: subscription.users,
                 projects: subscription.projects
@@ -111,6 +113,8 @@ export class SlackService {
     private validateAndExtractFormData(values: Record<string, any>) {
         const nameValue = values.name_block?.name_input;
         const priceValue = values.price_block?.price_input;
+        const currencyValue = values.currency_block?.currency_select;
+        const renewalCycleValue = values.renewal_cycle_block?.renewal_cycle_select;
         const dateValue = values.date_block?.date_input;
         const usersValue = values.users_block?.users_select;
         const projectsValue = values.projects_block?.projects_select;
@@ -130,6 +134,14 @@ export class SlackService {
             };
         }
 
+        if (!currencyValue?.selected_option?.value) {
+            return { errors: { currency_block: 'Currency is required' } };
+        }
+
+        if (!renewalCycleValue?.selected_option?.value) {
+            return { errors: { renewal_cycle_block: 'Renewal period is required' } };
+        }
+
         if (!dateValue?.selected_date) {
             return { errors: { date_block: 'Date is required' } };
         }
@@ -141,6 +153,8 @@ export class SlackService {
             data: {
                 name: nameValue.value,
                 price: price,
+                currency: currencyValue.selected_option.value,
+                renewalCycle: renewalCycleValue.selected_option.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
                 renewalDate: dateValue.selected_date,
                 users: users,
                 projects: projects

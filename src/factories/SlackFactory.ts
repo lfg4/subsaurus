@@ -103,7 +103,99 @@ export class SlackFactory {
                     },
                     "label": {
                         "type": "plain_text",
-                        "text": "Price (€)"
+                        "text": "Price"
+                    }
+                },
+                {
+                    "type": "input",
+                    "block_id": "currency_block",
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "currency_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select currency"
+                        },
+                        "initial_option": {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "EUR (€)"
+                            },
+                            "value": "EUR"
+                        },
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "EUR (€)"
+                                },
+                                "value": "EUR"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "USD ($)"
+                                },
+                                "value": "USD"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "GBP (£)"
+                                },
+                                "value": "GBP"
+                            }
+                        ]
+                    },
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Currency"
+                    }
+                },
+                {
+                    "type": "input",
+                    "block_id": "renewal_cycle_block",
+                    "element": {
+                        "type": "static_select",
+                        "action_id": "renewal_cycle_select",
+                        "placeholder": {
+                            "type": "plain_text",
+                            "text": "Select renewal period"
+                        },
+                        "initial_option": {
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Monthly"
+                            },
+                            "value": "MONTHLY"
+                        },
+                        "options": [
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Monthly"
+                                },
+                                "value": "MONTHLY"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Yearly"
+                                },
+                                "value": "YEARLY"
+                            },
+                            {
+                                "text": {
+                                    "type": "plain_text",
+                                    "text": "Custom"
+                                },
+                                "value": "CUSTOM"
+                            }
+                        ]
+                    },
+                    "label": {
+                        "type": "plain_text",
+                        "text": "Renewal Period"
                     }
                 },
                 {
@@ -184,6 +276,13 @@ export class SlackFactory {
     }
 
     static getSuccessModal(subscription: SlackSubscriptionData) {
+        const currencySymbol = subscription.currency === 'EUR' ? '€' : 
+                              subscription.currency === 'USD' ? '$' : 
+                              subscription.currency === 'GBP' ? '£' : subscription.currency;
+        
+        const renewalCycleText = subscription.renewalCycle === 'MONTHLY' ? 'Monthly' :
+                                subscription.renewalCycle === 'YEARLY' ? 'Yearly' : 'Custom';
+
         const fields = [
             {
                 "type": "mrkdwn",
@@ -191,7 +290,11 @@ export class SlackFactory {
             },
             {
                 "type": "mrkdwn",
-                "text": `*Price:*\n€${subscription.price}`
+                "text": `*Price:*\n${currencySymbol}${subscription.price}`
+            },
+            {
+                "type": "mrkdwn",
+                "text": `*Period:*\n${renewalCycleText}`
             },
             {
                 "type": "mrkdwn",
