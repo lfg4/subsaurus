@@ -7,7 +7,7 @@ export class UserRepository {
 
   async getUserById(id: number) {
     return await prisma.user.findUnique({
-      where: { id: id.toString() },
+      where: { id },
     });
   }
 
@@ -22,7 +22,7 @@ export class UserRepository {
 
   async deleteUser(id: number) {
     return await prisma.user.delete({
-      where: { id: id.toString() },
+      where: { id },
     });
   }
 }
