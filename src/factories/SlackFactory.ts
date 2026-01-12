@@ -7,7 +7,7 @@ export class SlackFactory {
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": "📚 Comandos Disponibles",
+                        "text": ":t-rex: Comandos Disponibles",
                         "emoji": true
                     }
                 },
