@@ -68,17 +68,7 @@ export async function POST(request: NextRequest) {
           })
         });
 
-        await fetch('https://slack.com/api/chat.postMessage', {
-            method: 'POST',
-            headers: {
-              'Authorization': `Bearer ${slackToken}`,
-              'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-              channel: "U07KE5UBS85", // 👈 El user ID es el "canal" para DMs
-              text: "🔔 Netflix se renueva en 3 días (€15.99)"
-            })
-          })
+        
         
         return new NextResponse('', { status: 200 });
       }

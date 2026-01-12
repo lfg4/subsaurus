@@ -97,8 +97,19 @@ export class SlackService {
 
             console.log('✅ Nueva suscripción:', subscription);
 
-            // TODO: Aquí guardarías en la base de datos
-            // await subscriptionRepository.create(subscription);
+            const slackToken = process.env.SLACK_BOT_TOKEN;
+
+            await fetch('https://slack.com/api/chat.postMessage', {
+                method: 'POST',
+                headers: {
+                  'Authorization': `Bearer ${slackToken}`,
+                  'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                  channel: selectedUsers, // 👈 El user ID es el "canal" para DMs
+                  text: `🔔 ${subscription.name} se renueva en ${subscription.renewalDate} (€${subscription.price})`
+                })
+              })
             
             return {
                 response_action: 'update',
