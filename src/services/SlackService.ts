@@ -8,7 +8,7 @@ export class SlackService {
             case 'help':
                 return 'Help command'
             default:
-                return 'Command not found'
+                return ':x: Command not found'
         }
     }
 }
