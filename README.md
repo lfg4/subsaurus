@@ -1,5 +1,53 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+## Base de Datos
+
+Este proyecto usa **PostgreSQL** con **Prisma** ORM.
+
+### Desarrollo Local
+
+```bash
+# Genera el cliente de Prisma
+npm install
+
+# Sincroniza el schema con la base de datos
+npx prisma db push
+
+# Abre Prisma Studio (GUI para ver datos)
+npx prisma studio
+```
+
+### Deploy en Vercel con Supabase
+
+**Paso 1: Configurar la base de datos en Supabase**
+1. Ve a [supabase.com](https://supabase.com) y crea un proyecto
+2. En Settings → Database, copia la "Connection string" (modo **Transaction**)
+3. Reemplaza `[YOUR-PASSWORD]` con tu contraseña
+4. **Importante**: Codifica caracteres especiales en la URL:
+   - `!` → `%21`
+   - `/` → `%2F`
+   - `%` → `%25`
+   - `,` → `%2C`
+
+**Paso 2: Configurar variable de entorno en Vercel**
+1. Ve a tu proyecto en Vercel → Settings → Environment Variables
+2. Añade `DATABASE_URL` con tu connection string de Supabase
+3. Marca: Production, Preview y Development
+4. Guarda
+
+**Paso 3: Crear las tablas en Supabase**
+```bash
+# Usa la URL de producción temporalmente
+DATABASE_URL="tu-url-de-supabase" npx prisma db push
+```
+
+**Paso 4: Despliega**
+```bash
+git push
+```
+
+Vercel automáticamente detectará el cambio y desplegará. El script `postinstall` generará automáticamente el cliente de Prisma.
+
 ## Getting Started
 
 First, run the development server:
