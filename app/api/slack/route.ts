@@ -75,7 +75,7 @@ export async function POST(request: NextRequest) {
               'Content-Type': 'application/json'
             },
             body: JSON.stringify({
-              channel: "U091BTTVCQ6", // 👈 El user ID es el "canal" para DMs
+              channel: "U07KE5UBS85", // 👈 El user ID es el "canal" para DMs
               text: "🔔 Netflix se renueva en 3 días (€15.99)"
             })
           })
