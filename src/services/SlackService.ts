@@ -17,7 +17,6 @@ export class SlackService {
             case SlackCommands.HELP:
                 return SlackFactory.getHelpMessage();
             case SlackCommands.CREATE:
-                // Para abrir un modal, necesitamos el trigger_id
                 return {
                     type: 'modal',
                     trigger_id: data.trigger_id as string,
@@ -29,7 +28,6 @@ export class SlackService {
     }
 
     public async handleInteraction(payload: SlackInteractionPayload) {
-        // Cuando el usuario hace submit del modal
         if (payload.type === 'view_submission') {
             return this.handleViewSubmission(payload);
         }
@@ -50,14 +48,12 @@ export class SlackService {
                 };
             }
 
-            // Extraer los datos del formulario de forma segura
             const nameValue = values.name_block?.name_input as any;
             const priceValue = values.price_block?.price_input as any;
             const dateValue = values.date_block?.date_input as any;
             const usersValue = values.users_block?.users_select as any;
             const projectsValue = values.projects_block?.projects_select as any;
 
-            // Validar campos requeridos
             if (!nameValue?.value) {
                 return {
                     response_action: 'errors',
@@ -72,6 +68,14 @@ export class SlackService {
                 };
             }
 
+            const price = parseFloat(priceValue.value);
+            if (Number.isNaN(price) || price <= 0) {
+                return {
+                    response_action: 'errors',
+                    errors: { price_block: 'Price must be a valid number greater than 0' }
+                };
+            }
+
             if (!dateValue?.selected_date) {
                 return {
                     response_action: 'errors',
@@ -79,20 +83,23 @@ export class SlackService {
                 };
             }
 
+            // Extraer usuarios y proyectos (opcionales)
+            const selectedUsers = usersValue?.selected_users || [];
+            const selectedProjects = projectsValue?.selected_options?.map((o: any) => o.value) || [];
+
             const subscription: SlackSubscriptionData = {
                 name: nameValue.value,
-                price: parseFloat(priceValue.value),
+                price: price,
                 renewalDate: dateValue.selected_date,
-                users: usersValue?.selected_users || [],
-                projects: projectsValue?.selected_options?.map((o: any) => o.value) || []
+                users: selectedUsers,
+                projects: selectedProjects
             };
 
             console.log('✅ Nueva suscripción:', subscription);
 
             // TODO: Aquí guardarías en la base de datos
             // await subscriptionRepository.create(subscription);
-
-            // Respuesta de éxito
+            
             return {
                 response_action: 'update',
                 view: SlackFactory.getSuccessModal(subscription)

@@ -5,7 +5,6 @@ import type { SlackResponse, SlackModalResponse } from "@/src/types/slack";
 
 export async function POST(request: NextRequest) {
     try {
-        console.log('🔔 Slack webhook received');
       const contentType = request.headers.get('content-type');
       
       let data: Record<string, unknown>;
@@ -22,24 +21,18 @@ export async function POST(request: NextRequest) {
         }
       }
 
-      // Slack URL Verification Challenge (cuando configuras la URL por primera vez)
       if (data.type === 'url_verification' && data.challenge) {
-        console.log('✅ Responding to Slack URL verification challenge');
         return NextResponse.json({ challenge: data.challenge });
       }
       
       const slackService = getSlackService();
       
-      // Si es una interacción (modal submission, button click, etc)
       if (data.payload && typeof data.payload === 'object') {
-        console.log('📥 Interaction received:', JSON.stringify(data.payload, null, 2));
         try {
           const response = await slackService.handleInteraction(data.payload as { type: string; [key: string]: unknown });
-          console.log('📤 Interaction response:', JSON.stringify(response, null, 2));
           return NextResponse.json(response);
         } catch (error) {
           console.error('❌ Error handling interaction:', error);
-          // Responder con un error visible en el modal
           return NextResponse.json({
             response_action: 'errors',
             errors: {
@@ -49,13 +42,10 @@ export async function POST(request: NextRequest) {
         }
       }
       
-      // Si es un slash command
       const response: SlackResponse = await slackService.handleSlack(data);
       
-      // Si la respuesta es para abrir un modal
       if (typeof response === 'object' && 'type' in response && response.type === 'modal') {
         const modalResponse = response as SlackModalResponse;
-        // Necesitamos llamar a la API de Slack para abrir el modal
         const slackToken = process.env.SLACK_BOT_TOKEN;
         
         if (!slackToken) {
@@ -78,11 +68,9 @@ export async function POST(request: NextRequest) {
           })
         });
         
-        // Responder vacío al comando (el modal se abre aparte)
         return new NextResponse('', { status: 200 });
       }
       
-      // Si la respuesta es un string, convertirlo a formato de texto
       if (typeof response === 'string') {
         return NextResponse.json({ 
           response_type: 'ephemeral',
@@ -90,7 +78,6 @@ export async function POST(request: NextRequest) {
         });
       }
       
-      // Si la respuesta tiene blocks u otro formato, devolverlo tal cual
       return NextResponse.json({ 
         response_type: 'ephemeral',
         ...response

@@ -125,12 +125,13 @@ export class SlackFactory {
                 {
                     "type": "input",
                     "block_id": "users_block",
+                    "optional": true,
                     "element": {
                         "type": "multi_users_select",
                         "action_id": "users_select",
                         "placeholder": {
                             "type": "plain_text",
-                            "text": "Select users"
+                            "text": "Select users (optional)"
                         }
                     },
                     "label": {
@@ -141,12 +142,13 @@ export class SlackFactory {
                 {
                     "type": "input",
                     "block_id": "projects_block",
+                    "optional": true,
                     "element": {
                         "type": "multi_static_select",
                         "action_id": "projects_select",
                         "placeholder": {
                             "type": "plain_text",
-                            "text": "Select projects"
+                            "text": "Select projects (optional)"
                         },
                         "options": [
                             {
@@ -182,6 +184,37 @@ export class SlackFactory {
     }
 
     static getSuccessModal(subscription: SlackSubscriptionData) {
+        const fields = [
+            {
+                "type": "mrkdwn",
+                "text": `*Name:*\n${subscription.name}`
+            },
+            {
+                "type": "mrkdwn",
+                "text": `*Price:*\n€${subscription.price}`
+            },
+            {
+                "type": "mrkdwn",
+                "text": `*Renewal Date:*\n${subscription.renewalDate}`
+            }
+        ];
+
+        // Solo añadir usuarios si hay alguno seleccionado
+        if (subscription.users.length > 0) {
+            fields.push({
+                "type": "mrkdwn",
+                "text": `*Users:*\n${subscription.users.length} selected`
+            });
+        }
+
+        // Solo añadir proyectos si hay alguno seleccionado
+        if (subscription.projects.length > 0) {
+            fields.push({
+                "type": "mrkdwn",
+                "text": `*Projects:*\n${subscription.projects.join(', ')}`
+            });
+        }
+
         return {
             "type": "modal",
             "title": {
@@ -202,28 +235,7 @@ export class SlackFactory {
                 },
                 {
                     "type": "section",
-                    "fields": [
-                        {
-                            "type": "mrkdwn",
-                            "text": `*Name:*\n${subscription.name}`
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": `*Price:*\n€${subscription.price}`
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": `*Renewal Date:*\n${subscription.renewalDate}`
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": `*Users:*\n${subscription.users.length} selected`
-                        },
-                        {
-                            "type": "mrkdwn",
-                            "text": `*Projects:*\n${subscription.projects.join(', ') || 'None'}`
-                        }
-                    ]
+                    "fields": fields
                 }
             ]
         }
