@@ -7,7 +7,7 @@ export class SlackFactory {
                     "type": "header",
                     "text": {
                         "type": "plain_text",
-                        "text": ":t-rex: Comandos Disponibles",
+                        "text": ":t-rex: Available Commands",
                         "emoji": true
                     }
                 },
@@ -15,7 +15,7 @@ export class SlackFactory {
                     "type": "section",
                     "text": {
                         "type": "mrkdwn",
-                        "text": "*`/subsaurus help`*\nMuestra este mensaje de ayuda"
+                        "text": "*`/subsaurus help`*\nShow this help message"
                     }
                 },
                 {
@@ -26,7 +26,7 @@ export class SlackFactory {
                     "elements": [
                         {
                             "type": "mrkdwn",
-                            "text": "💡 _Más comandos próximamente..._"
+                            "text": "💡 _More commands coming soon..._"
                         }
                     ]
                 }
