@@ -1,11 +1,12 @@
 import { UserRepository } from '../repositories/UserRepository';
 import { UserService } from '../services/UserService';
 import { PingService } from '../services/PingService';
+import { SlackService } from '../services/SlackService';
 
 let userRepositoryInstance: UserRepository;
 let userServiceInstance: UserService;
 let pingServiceInstance: PingService;
-
+let slackServiceInstance: SlackService;
 export function getUserRepository(): UserRepository {
   if (!userRepositoryInstance) {
     userRepositoryInstance = new UserRepository();
@@ -28,9 +29,17 @@ export function getPingService(): PingService {
   return pingServiceInstance;
 }
 
+export function getSlackService(): SlackService {
+  if (!slackServiceInstance) {
+    slackServiceInstance = new SlackService();
+  }
+  return slackServiceInstance;
+}
+
 export function resetContainer() {
   userRepositoryInstance = undefined as any;
   userServiceInstance = undefined as any;
   pingServiceInstance = undefined as any;
+  slackServiceInstance = undefined as any;
 }
 
