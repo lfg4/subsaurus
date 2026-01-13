@@ -8,6 +8,7 @@ on:
       - 'trigger/**'
       - 'src/**'
       - 'trigger.config.ts'
+  workflow_dispatch: # Permite ejecutarlo manualmente
 
 jobs:
   deploy:
