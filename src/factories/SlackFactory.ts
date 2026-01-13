@@ -336,4 +336,93 @@ export class SlackFactory {
             ]
         }
     }
+
+    static getUsageCheckMessage(
+        usageCheckId: number,
+        subscriptionName: string,
+        renewalCycle: 'MONTHLY' | 'YEARLY' | 'CUSTOM'
+    ) {
+        const period = renewalCycle === 'MONTHLY' ? 'month' : 
+                      renewalCycle === 'YEARLY' ? 'year' : 'period';
+        
+        const funnyIntro = renewalCycle === 'MONTHLY' 
+            ? "Time flies when you're subscribed! :calendar:" 
+            : "Another year around the sun! :sunny:";
+
+        return {
+            "blocks": [
+                {
+                    "type": "header",
+                    "text": {
+                        "type": "plain_text",
+                        "text": ":t-rex: Subsaurus Usage Check",
+                        "emoji": true
+                    }
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": `${funnyIntro}\n\n*${subscriptionName}* is about to renew, and we're wondering...`
+                    }
+                },
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": `:thinking_face: *Did you actually use this ${period === 'month' ? 'this past month' : 'this past year'}?*\n\n_Be honest, we won't judge... much._ :eyes:`
+                    }
+                },
+                {
+                    "type": "divider"
+                },
+                {
+                    "type": "actions",
+                    "elements": [
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Yes! :muscle:",
+                                "emoji": true
+                            },
+                            "style": "primary",
+                            "value": `${usageCheckId}|YES`,
+                            "action_id": "usage_response_yes"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "A Little :shrug:",
+                                "emoji": true
+                            },
+                            "value": `${usageCheckId}|LITTLE`,
+                            "action_id": "usage_response_little"
+                        },
+                        {
+                            "type": "button",
+                            "text": {
+                                "type": "plain_text",
+                                "text": "Nope :see_no_evil:",
+                                "emoji": true
+                            },
+                            "style": "danger",
+                            "value": `${usageCheckId}|NO`,
+                            "action_id": "usage_response_no"
+                        }
+                    ]
+                },
+                {
+                    "type": "context",
+                    "elements": [
+                        {
+                            "type": "mrkdwn",
+                            "text": ":bulb: _Your honest feedback helps keep our subscription game strong!_"
+                        }
+                    ]
+                }
+            ]
+        }
+    }
 }
