@@ -1,4 +1,4 @@
-export type UsageCheckStatus = 'SENT' | 'SCHEDULED';
+import { UsageCheckStatus } from '../types/enums';
 
 export class UsageCheck {
   id: number;
@@ -31,11 +31,11 @@ export class UsageCheck {
   }
 
   isScheduled(): boolean {
-    return this.status === 'SCHEDULED';
+    return this.status === UsageCheckStatus.SCHEDULED;
   }
 
   isSent(): boolean {
-    return this.status === 'SENT';
+    return this.status === UsageCheckStatus.SENT;
   }
 
   shouldBeSent(): boolean {

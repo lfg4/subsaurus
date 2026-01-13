@@ -1,4 +1,4 @@
-export type ResponseType = 'YES' | 'NO' | 'LITTLE';
+import { UsageResponseType } from '../types/enums';
 
 export class UsageResponse {
   id: number;
@@ -6,7 +6,7 @@ export class UsageResponse {
   usageCheckId: number;
   subscriptionId: number;
   slackUserId: string;
-  response: ResponseType | null;
+  response: UsageResponseType | null;
   respondedAt: Date | null;
 
   constructor(data: {
@@ -23,7 +23,7 @@ export class UsageResponse {
     this.usageCheckId = data.usageCheckId;
     this.subscriptionId = data.subscriptionId;
     this.slackUserId = data.slackUserId;
-    this.response = data.response as ResponseType | null;
+    this.response = data.response as UsageResponseType | null;
     this.respondedAt = data.respondedAt;
   }
 
@@ -32,15 +32,15 @@ export class UsageResponse {
   }
 
   isPositive(): boolean {
-    return this.response === 'YES';
+    return this.response === UsageResponseType.YES;
   }
 
   isNegative(): boolean {
-    return this.response === 'NO';
+    return this.response === UsageResponseType.NO;
   }
 
   isLittle(): boolean {
-    return this.response === 'LITTLE';
+    return this.response === UsageResponseType.LITTLE;
   }
 
   getResponseTime(usageCheckSentAt: Date): number | null {

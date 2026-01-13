@@ -1,4 +1,7 @@
 import type { SlackSubscriptionData } from "../types/slack";
+import { RenewalCycle, SlackActionId, UsageResponseType } from "../types/enums";
+import type { Subscription } from "../entities/Subscription";
+import type { UsageResponse } from "../entities/UsageResponse";
 
 // biome-ignore lint/complexity/noStaticOnlyClass: Factory pattern
 export class SlackFactory {
@@ -340,12 +343,12 @@ export class SlackFactory {
     static getUsageCheckMessage(
         usageCheckId: number,
         subscriptionName: string,
-        renewalCycle: 'MONTHLY' | 'YEARLY' | 'CUSTOM'
+        renewalCycle: RenewalCycle
     ) {
-        const period = renewalCycle === 'MONTHLY' ? 'month' : 
-                      renewalCycle === 'YEARLY' ? 'year' : 'period';
+        const period = renewalCycle === RenewalCycle.MONTHLY ? 'month' : 
+                      renewalCycle === RenewalCycle.YEARLY ? 'year' : 'period';
         
-        const funnyIntro = renewalCycle === 'MONTHLY' 
+        const funnyIntro = renewalCycle === RenewalCycle.MONTHLY 
             ? "Time flies when you're subscribed! :calendar:" 
             : "Another year around the sun! :sunny:";
 
@@ -388,7 +391,7 @@ export class SlackFactory {
                             },
                             "style": "primary",
                             "value": `${usageCheckId}|YES`,
-                            "action_id": "usage_response_yes"
+                            "action_id": SlackActionId.USAGE_RESPONSE_YES
                         },
                         {
                             "type": "button",
@@ -398,7 +401,7 @@ export class SlackFactory {
                                 "emoji": true
                             },
                             "value": `${usageCheckId}|LITTLE`,
-                            "action_id": "usage_response_little"
+                            "action_id": SlackActionId.USAGE_RESPONSE_LITTLE
                         },
                         {
                             "type": "button",
@@ -409,7 +412,7 @@ export class SlackFactory {
                             },
                             "style": "danger",
                             "value": `${usageCheckId}|NO`,
-                            "action_id": "usage_response_no"
+                            "action_id": SlackActionId.USAGE_RESPONSE_NO
                         }
                     ]
                 },
@@ -424,5 +427,72 @@ export class SlackFactory {
                 }
             ]
         }
+    }
+
+    static getRenewalNotificationMessage(
+        subscriptionSummaries: Array<{
+            subscription: Subscription;
+            responses: UsageResponse[];
+        }>
+    ) {
+        const blocks: any[] = [
+            {
+                "type": "header",
+                "text": {
+                    "type": "plain_text",
+                    "text": ":calendar: Subscriptions Renewing Tomorrow",
+                    "emoji": true
+                }
+            },
+            {
+                "type": "section",
+                "text": {
+                    "type": "mrkdwn",
+                    "text": `:t-rex: *Hey there!* The following subscriptions are renewing tomorrow. Here's a quick summary of usage:`
+                }
+            },
+            {
+                "type": "divider"
+            }
+        ];
+
+        for (const { subscription, responses } of subscriptionSummaries) {
+            const yesCount = responses.filter(r => r.response === UsageResponseType.YES).length;
+            const noCount = responses.filter(r => r.response === UsageResponseType.NO).length;
+            const littleCount = responses.filter(r => r.response === UsageResponseType.LITTLE).length;
+            const noResponseCount = responses.filter(r => !r.response).length;
+
+            const renewalCycleText = subscription.renewalCycle === RenewalCycle.MONTHLY ? 'Monthly' :
+                                    subscription.renewalCycle === RenewalCycle.YEARLY ? 'Yearly' : 'Custom';
+
+            const usageText = responses.length > 0
+                ? `\n:white_check_mark: *Yes:* ${yesCount}\n:shrug: *A Little:* ${littleCount}\n:x: *No:* ${noCount}\n:question: *No Response:* ${noResponseCount}`
+                : '\n_No usage responses collected_';
+
+            blocks.push(
+                {
+                    "type": "section",
+                    "text": {
+                        "type": "mrkdwn",
+                        "text": `*${subscription.name}*\n_${renewalCycleText} • Renews: ${subscription.renewalDate.toLocaleDateString()}_${usageText}`
+                    }
+                },
+                {
+                    "type": "divider"
+                }
+            );
+        }
+
+        blocks.push({
+            "type": "context",
+            "elements": [
+                {
+                    "type": "mrkdwn",
+                    "text": ":bulb: _All subscriptions have been updated for the next cycle!_"
+                }
+            ]
+        });
+
+        return { blocks };
     }
 }

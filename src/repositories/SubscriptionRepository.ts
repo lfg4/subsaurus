@@ -33,17 +33,6 @@ export class SubscriptionRepository {
     return this.toEntity(subscription);
   }
 
-  async findAll(): Promise<Subscription[]> {
-    const subscriptions = await prisma.subscription.findMany({
-      include: {
-        subscriptionUsers: true
-      },
-      orderBy: { renewalDate: 'asc' },
-    });
-
-    return subscriptions.map(sub => this.toEntity(sub));
-  }
-
   async findById(id: number): Promise<Subscription | null> {
     const subscription = await prisma.subscription.findUnique({
       where: { id },
@@ -57,33 +46,46 @@ export class SubscriptionRepository {
     return this.toEntity(subscription);
   }
 
-  async findByUser(slackUserId: string): Promise<Subscription[]> {
+  async findRenewingTomorrow(): Promise<Subscription[]> {
+    const tomorrow = new Date();
+    tomorrow.setDate(tomorrow.getDate() + 1);
+    tomorrow.setHours(0, 0, 0, 0);
+    
+    const dayAfterTomorrow = new Date(tomorrow);
+    dayAfterTomorrow.setDate(dayAfterTomorrow.getDate() + 1);
+
     const subscriptions = await prisma.subscription.findMany({
       where: {
-        subscriptionUsers: {
-          some: {
-            slackUserId: slackUserId
-          }
-        }
+        renewalDate: {
+          gte: tomorrow,
+          lt: dayAfterTomorrow,
+        },
       },
       include: {
-        subscriptionUsers: true
+        subscriptionUsers: true,
       },
       orderBy: { renewalDate: 'asc' },
     });
 
-    return subscriptions.map(sub => this.toEntity(sub));
+    return subscriptions.map(s => this.toEntity(s));
   }
 
-  async delete(id: number): Promise<void> {
-    await prisma.subscription.delete({
+  async updateRenewalDate(id: number, newRenewalDate: Date): Promise<Subscription> {
+    const subscription = await prisma.subscription.update({
       where: { id },
+      data: { renewalDate: newRenewalDate },
+      include: {
+        subscriptionUsers: true,
+      },
     });
+
+    return this.toEntity(subscription);
   }
 
   private toEntity(subscription: any): Subscription {
     return new Subscription({
       id: subscription.id,
+      slackWorkspaceId: subscription.slackWorkspaceId,
       name: subscription.name,
       price: subscription.costAmount,
       renewalCycle: subscription.renewalCycle,

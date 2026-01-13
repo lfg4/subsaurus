@@ -86,6 +86,7 @@ model UsageResponse {
   slackUserId     String  @map("slack_user_id")
   response        String?
   respondedAt     DateTime? @map("responded_at")
+  createdAt      DateTime @default(now()) @map("created_at")
 
   @@map("usage_responses")
 }

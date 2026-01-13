@@ -1,5 +1,6 @@
 import { prisma } from '@/src/lib/prisma';
 import { UsageResponse } from '../entities/UsageResponse';
+import type { UsageResponseType } from '../types/enums';
 
 export class UsageResponseRepository {
   async createPending(data: {
@@ -24,7 +25,7 @@ export class UsageResponseRepository {
 
   async updateResponse(
     id: number,
-    response: 'YES' | 'NO' | 'LITTLE'
+    response: UsageResponseType
   ): Promise<UsageResponse> {
     const usageResponse = await prisma.usageResponse.update({
       where: { id },
@@ -53,58 +54,25 @@ export class UsageResponseRepository {
     return this.toEntity(response);
   }
 
-  async findByUsageCheck(usageCheckId: number): Promise<UsageResponse[]> {
+  async findPendingByUsageCheck(usageCheckId: number): Promise<UsageResponse[]> {
     const responses = await prisma.usageResponse.findMany({
-      where: { usageCheckId },
-      orderBy: { respondedAt: 'asc' },
-    });
-
-    return responses.map(r => this.toEntity(r));
-  }
-
-  async findBySubscription(subscriptionId: number): Promise<UsageResponse[]> {
-    const responses = await prisma.usageResponse.findMany({
-      where: { subscriptionId },
-      orderBy: { respondedAt: 'desc' },
-    });
-
-    return responses.map(r => this.toEntity(r));
-  }
-
-  async findByUser(slackUserId: string): Promise<UsageResponse[]> {
-    const responses = await prisma.usageResponse.findMany({
-      where: { slackUserId },
-      orderBy: { respondedAt: 'desc' },
-    });
-
-    return responses.map(r => this.toEntity(r));
-  }
-
-  async hasUserResponded(usageCheckId: number, slackUserId: string): Promise<boolean> {
-    const response = await prisma.usageResponse.findFirst({
       where: {
         usageCheckId,
-        slackUserId,
+        response: null,
       },
     });
 
-    return response !== null;
+    return responses.map(r => this.toEntity(r));
   }
 
-  async getResponsesSummary(usageCheckId: number): Promise<{
-    yes: number;
-    no: number;
-    little: number;
-    total: number;
-  }> {
-    const responses = await this.findByUsageCheck(usageCheckId);
+  async findByUsageCheck(usageCheckId: number): Promise<UsageResponse[]> {
+    const responses = await prisma.usageResponse.findMany({
+      where: {
+        usageCheckId,
+      },
+    });
 
-    return {
-      yes: responses.filter(r => r.isPositive()).length,
-      no: responses.filter(r => r.isNegative()).length,
-      little: responses.filter(r => r.isLittle()).length,
-      total: responses.length,
-    };
+    return responses.map(r => this.toEntity(r));
   }
 
   private toEntity(response: any): UsageResponse {

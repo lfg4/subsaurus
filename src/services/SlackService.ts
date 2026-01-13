@@ -3,7 +3,8 @@ import { SlackFactory } from '../factories/SlackFactory';
 import type { SlackSubscriptionData } from '../types/slack';
 import type { CreateSubscriptionService } from './CreateSubscriptionService';
 import type { UsageResponseRepository } from '../repositories/UsageResponseRepository';
-import type { RenewalCycle } from '../entities/Subscription';
+import type { RenewalCycle } from '../types/enums';
+import { UsageResponseType } from '../types/enums';
 
 enum SlackCommands {
     HELP = 'help',
@@ -112,15 +113,15 @@ export class SlackService {
 
             await this.usageResponseRepository.updateResponse(
                 usageResponse.id,
-                response as 'YES' | 'NO' | 'LITTLE'
+                response as UsageResponseType
             );
 
             console.log(`✅ User ${userId} responded ${response} to usage check ${usageCheckId}`);
 
             const responseMessages: Record<string, string> = {
-                YES: '✅ Great! Thanks for confirming you\'re using this subscription.',
-                NO: '🚫 Got it. We will consider canceling if you\'re not using it.',
-                LITTLE: '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
+                [UsageResponseType.YES]: '✅ Great! Thanks for confirming you\'re using this subscription.',
+                [UsageResponseType.NO]: '🚫 Got it. We will consider canceling if you\'re not using it.',
+                [UsageResponseType.LITTLE]: '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
             };
 
             this.notifyUsers([userId], responseMessages[response]);

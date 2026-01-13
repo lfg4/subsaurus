@@ -1,4 +1,5 @@
-export type RenewalCycle = 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+import type { RenewalCycle } from '../types/enums';
+
 export interface SubscriptionDto {
   name: string;
   price: number;
@@ -11,6 +12,7 @@ export interface SubscriptionDto {
 
 export class Subscription {
   id: number;
+  slackWorkspaceId: string;
   name: string;
   price: number;
   renewalCycle: RenewalCycle;
@@ -22,6 +24,7 @@ export class Subscription {
 
   constructor(data: {
     id: number;
+    slackWorkspaceId: string;
     name: string;
     price: number;
     renewalCycle: RenewalCycle;
@@ -32,6 +35,7 @@ export class Subscription {
     updatedAt: Date;
   }) {
     this.id = data.id;
+    this.slackWorkspaceId = data.slackWorkspaceId;
     this.name = data.name;
     this.price = data.price;
     this.renewalCycle = data.renewalCycle;

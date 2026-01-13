@@ -1,7 +1,8 @@
-import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
-import { UsageCheckRepository } from '../repositories/UsageCheckRepository';
-import { Subscription } from '../entities/Subscription';
+import type { SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import type { UsageCheckRepository } from '../repositories/UsageCheckRepository';
+import type { Subscription } from '../entities/Subscription';
 import type { SlackSubscriptionData } from '../types/slack';
+import { RenewalCycle } from '../types/enums';
 
 export class CreateSubscriptionService {
   constructor(
@@ -24,9 +25,9 @@ export class CreateSubscriptionService {
     const periodEnd = new Date(renewalDate);
 
     const periodStart = new Date(renewalDate);
-    if (data.renewalCycle === 'MONTHLY') {
+    if (data.renewalCycle === RenewalCycle.MONTHLY) {
       periodStart.setMonth(periodStart.getMonth() - 1);
-    } else if (data.renewalCycle === 'YEARLY') {
+    } else if (data.renewalCycle === RenewalCycle.YEARLY) {
       periodStart.setFullYear(periodStart.getFullYear() - 1);
     } else {
       periodStart.setDate(periodStart.getDate() - 30);
