@@ -1,4 +1,4 @@
-import { RenewalCycle } from "../entities/Subscription";
+import { RenewalCycle } from "./enums";
 
 export interface SlackSubscriptionData {
   name: string;
