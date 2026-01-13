@@ -455,7 +455,7 @@ export class SlackFactory {
                 "type": "divider"
             }
         ];
-
+console.log(subscriptionSummaries);
         for (const { subscription, responses } of subscriptionSummaries) {
             const yesCount = responses.filter(r => r.response === UsageResponseType.YES).length;
             const noCount = responses.filter(r => r.response === UsageResponseType.NO).length;

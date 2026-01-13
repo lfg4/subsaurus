@@ -125,10 +125,9 @@ export class SlackService {
                 [UsageResponseType.LITTLE]: '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
             };
 
-            return NextResponse.json({
-                replace_original: true,
-                text: responseMessages[response]
-            });
+            await this.notifyUsers([userId], responseMessages[response]);
+
+            return NextResponse.json({ response_action: 'clear' });
         } catch (error) {
             console.error('❌ Error handling usage response:', error);
             return NextResponse.json({
