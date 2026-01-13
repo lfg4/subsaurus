@@ -18,7 +18,10 @@ export const config: TriggerConfig = {
   },
   build: {
     extensions: [
-      prismaExtension({ mode: "modern" }),
+      prismaExtension({
+        schema: "prisma/schema.prisma",
+        mode: "legacy",
+      }),
     ],
   },
 };
