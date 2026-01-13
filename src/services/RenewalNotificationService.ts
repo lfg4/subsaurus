@@ -4,6 +4,7 @@ import type { UsageResponseRepository } from '../repositories/UsageResponseRepos
 import type { SlackService } from './SlackService';
 import { SlackFactory } from '../factories/SlackFactory';
 import { RenewalCycle } from '../types/enums';
+import { UsageResponse } from '../entities/UsageResponse';
 
 export class RenewalNotificationService {
   constructor(
@@ -37,7 +38,7 @@ export class RenewalNotificationService {
             subscription.renewalDate
           );
 
-          let responses = [];
+          let responses: UsageResponse[] = [];
           if (usageCheck) {
             responses = await this.usageResponseRepository.findByUsageCheck(usageCheck.id);
           }
