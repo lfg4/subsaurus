@@ -119,12 +119,14 @@ export class SlackService {
 
             const responseMessages: Record<string, string> = {
                 YES: '✅ Great! Thanks for confirming you\'re using this subscription.',
-                NO: '🚫 Got it. Consider canceling if you\'re not using it.',
-                LITTLE: '🤔 Hmm, maybe you could optimize your plan. Thanks for the feedback!',
+                NO: '🚫 Got it. We will consider canceling if you\'re not using it.',
+                LITTLE: '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
             };
 
+            this.notifyUsers([userId], responseMessages[response]);
+
             return NextResponse.json({
-                text: responseMessages[response] || '✅ Response recorded.',
+                text: '✅ Response recorded.',
             });
         } catch (error) {
             console.error('❌ Error handling usage response:', error);
