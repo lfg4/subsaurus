@@ -1,7 +1,19 @@
-export class SubscriptionEntity {
+export type RenewalCycle = 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+export interface SubscriptionDto {
+  name: string;
+  price: number;
+  currency: string;
+  renewalCycle: RenewalCycle;
+  renewalDate: string; // Formato: "YYYY-MM-DD"
+  slackUserIds: string[];
+  projects: string[];
+}
+
+export class Subscription {
   id: number;
   name: string;
   price: number;
+  renewalCycle: RenewalCycle;
   renewalDate: Date;
   slackUserIds: string[];
   projects: string[];
@@ -12,6 +24,7 @@ export class SubscriptionEntity {
     id: number;
     name: string;
     price: number;
+    renewalCycle: RenewalCycle;
     renewalDate: Date;
     slackUserIds: string[];
     projects: string[];
@@ -21,6 +34,7 @@ export class SubscriptionEntity {
     this.id = data.id;
     this.name = data.name;
     this.price = data.price;
+    this.renewalCycle = data.renewalCycle;
     this.renewalDate = data.renewalDate;
     this.slackUserIds = data.slackUserIds;
     this.projects = data.projects;

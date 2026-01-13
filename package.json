@@ -7,10 +7,14 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "postinstall": "prisma generate"
+    "postinstall": "prisma generate",
+    "trigger:dev": "npx trigger.dev@latest dev",
+    "trigger:deploy": "npx trigger.dev@latest deploy",
+    "trigger:logs": "npx trigger.dev@latest logs"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
+    "@trigger.dev/sdk": "^4.3.2",
     "next": "16.1.1",
     "prisma": "^5.22.0",
     "react": "19.2.3",

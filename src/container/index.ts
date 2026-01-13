@@ -1,14 +1,22 @@
 import { UserRepository } from '../repositories/UserRepository';
 import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
+import { UsageCheckRepository } from '../repositories/UsageCheckRepository';
+import { UsageResponseRepository } from '../repositories/UsageResponseRepository';
 import { UserService } from '../services/UserService';
 import { PingService } from '../services/PingService';
 import { SlackService } from '../services/SlackService';
+import { CreateSubscriptionService } from '../services/CreateSubscriptionService';
+import { SendUsageCheckService } from '../services/SendUsageCheckService';
 
 let userRepositoryInstance: UserRepository;
 let subscriptionRepositoryInstance: SubscriptionRepository;
+let usageCheckRepositoryInstance: UsageCheckRepository;
+let usageResponseRepositoryInstance: UsageResponseRepository;
 let userServiceInstance: UserService;
 let pingServiceInstance: PingService;
 let slackServiceInstance: SlackService;
+let createSubscriptionServiceInstance: CreateSubscriptionService;
+let sendUsageCheckServiceInstance: SendUsageCheckService;
 export function getUserRepository(): UserRepository {
   if (!userRepositoryInstance) {
     userRepositoryInstance = new UserRepository();
@@ -21,6 +29,20 @@ export function getSubscriptionRepository(): SubscriptionRepository {
     subscriptionRepositoryInstance = new SubscriptionRepository();
   }
   return subscriptionRepositoryInstance;
+}
+
+export function getUsageCheckRepository(): UsageCheckRepository {
+  if (!usageCheckRepositoryInstance) {
+    usageCheckRepositoryInstance = new UsageCheckRepository();
+  }
+  return usageCheckRepositoryInstance;
+}
+
+export function getUsageResponseRepository(): UsageResponseRepository {
+  if (!usageResponseRepositoryInstance) {
+    usageResponseRepositoryInstance = new UsageResponseRepository();
+  }
+  return usageResponseRepositoryInstance;
 }
 
 export function getUserService(): UserService {
@@ -38,19 +60,55 @@ export function getPingService(): PingService {
   return pingServiceInstance;
 }
 
+export function getCreateSubscriptionService(): CreateSubscriptionService {
+  if (!createSubscriptionServiceInstance) {
+    const subscriptionRepository = getSubscriptionRepository();
+    const usageCheckRepository = getUsageCheckRepository();
+    createSubscriptionServiceInstance = new CreateSubscriptionService(
+      subscriptionRepository,
+      usageCheckRepository
+    );
+  }
+  return createSubscriptionServiceInstance;
+}
+
 export function getSlackService(): SlackService {
   if (!slackServiceInstance) {
-    const subscriptionRepository = getSubscriptionRepository();
-    slackServiceInstance = new SlackService(subscriptionRepository);
+    const createSubscriptionService = getCreateSubscriptionService();
+    const usageResponseRepository = getUsageResponseRepository();
+    slackServiceInstance = new SlackService(
+      createSubscriptionService,
+      usageResponseRepository
+    );
   }
   return slackServiceInstance;
+}
+
+export function getSendUsageCheckService(): SendUsageCheckService {
+  if (!sendUsageCheckServiceInstance) {
+    const usageCheckRepository = getUsageCheckRepository();
+    const subscriptionRepository = getSubscriptionRepository();
+    const usageResponseRepository = getUsageResponseRepository();
+    const slackService = getSlackService();
+    sendUsageCheckServiceInstance = new SendUsageCheckService(
+      usageCheckRepository,
+      subscriptionRepository,
+      usageResponseRepository,
+      slackService
+    );
+  }
+  return sendUsageCheckServiceInstance;
 }
 
 export function resetContainer() {
   userRepositoryInstance = undefined as any;
   subscriptionRepositoryInstance = undefined as any;
+  usageCheckRepositoryInstance = undefined as any;
+  usageResponseRepositoryInstance = undefined as any;
   userServiceInstance = undefined as any;
   pingServiceInstance = undefined as any;
   slackServiceInstance = undefined as any;
+  createSubscriptionServiceInstance = undefined as any;
+  sendUsageCheckServiceInstance = undefined as any;
 }
 

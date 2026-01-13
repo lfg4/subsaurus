@@ -1,8 +1,9 @@
 import { NextResponse } from 'next/server';
 import { SlackFactory } from '../factories/SlackFactory';
 import type { SlackSubscriptionData } from '../types/slack';
-import { SubscriptionRepository } from '../repositories/SubscriptionRepository';
-import { CreateSubscriptionDto } from '../dtos/subscription.dto';
+import type { CreateSubscriptionService } from './CreateSubscriptionService';
+import type { UsageResponseRepository } from '../repositories/UsageResponseRepository';
+import type { RenewalCycle } from '../entities/Subscription';
 
 enum SlackCommands {
     HELP = 'help',
@@ -10,7 +11,17 @@ enum SlackCommands {
 }
 
 export class SlackService {
-    constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
+    private slackToken: string;
+    constructor(
+        private readonly createSubscriptionService: CreateSubscriptionService,
+        private readonly usageResponseRepository: UsageResponseRepository
+    ) {
+        this.slackToken = process.env.SLACK_BOT_TOKEN || '';
+        if (!this.slackToken) {
+            console.error('❌ SLACK_BOT_TOKEN not configured');
+            throw new Error('Slack bot token not configured');
+        }
+    }
 
     
     public async handle(data: Record<string, unknown>) {
@@ -49,7 +60,78 @@ export class SlackService {
             return this.handleModalSubmission(payload);
         }
         
+        if (type === 'block_actions') {
+            return this.handleBlockActions(payload);
+        }
+        
         return NextResponse.json({ response_action: 'clear' });
+    }
+
+    private async handleBlockActions(payload: Record<string, unknown>) {
+        try {
+            const actions = (payload.actions as any[])?.[0];
+            if (!actions) {
+                return NextResponse.json({ ok: true });
+            }
+
+            const actionId = actions.action_id as string;
+            const value = actions.value as string;
+            const userId = (payload.user as any)?.id;
+
+            if (actionId?.startsWith('usage_response_')) {
+                return this.handleUsageResponse(value, userId);
+            }
+
+            return NextResponse.json({ ok: true });
+        } catch (error) {
+            console.error('❌ Error handling block actions:', error);
+            return NextResponse.json({ ok: true });
+        }
+    }
+
+    private async handleUsageResponse(value: string, userId: string) {
+        try {
+            const [usageCheckIdStr, response] = value.split('|');
+            const usageCheckId = parseInt(usageCheckIdStr, 10);
+
+            if (!usageCheckId || !response) {
+                throw new Error('Invalid button value format');
+            }
+
+            const usageResponse = await this.usageResponseRepository.findPendingByUsageCheckAndUser(
+                usageCheckId,
+                userId
+            );
+
+            if (!usageResponse) {
+                console.error(`❌ UsageResponse not found for check ${usageCheckId} and user ${userId}`);
+                return NextResponse.json({
+                    text: '❌ Your pending response was not found.',
+                });
+            }
+
+            await this.usageResponseRepository.updateResponse(
+                usageResponse.id,
+                response as 'YES' | 'NO' | 'LITTLE'
+            );
+
+            console.log(`✅ User ${userId} responded ${response} to usage check ${usageCheckId}`);
+
+            const responseMessages: Record<string, string> = {
+                YES: '✅ Great! Thanks for confirming you\'re using this subscription.',
+                NO: '🚫 Got it. Consider canceling if you\'re not using it.',
+                LITTLE: '🤔 Hmm, maybe you could optimize your plan. Thanks for the feedback!',
+            };
+
+            return NextResponse.json({
+                text: responseMessages[response] || '✅ Response recorded.',
+            });
+        } catch (error) {
+            console.error('❌ Error handling usage response:', error);
+            return NextResponse.json({
+                text: '❌ There was an error processing your response.',
+            });
+        }
     }
 
     private async handleModalSubmission(payload: Record<string, unknown>) {
@@ -75,25 +157,15 @@ export class SlackService {
 
             const subscription = validationResult.data;
             
-            console.log('✅ Nueva suscripción:', subscription);
-
-            // Guardar en base de datos
-            const dto = new CreateSubscriptionDto({
-                name: subscription.name,
-                price: subscription.price,
-                currency: subscription.currency,
-                renewalCycle: subscription.renewalCycle,
-                renewalDate: subscription.renewalDate,
-                slackUserIds: subscription.users,
-                projects: subscription.projects
-            });
-
-            // Extraer workspace_id y user_id del payload
+            
             const workspaceId = (payload.team as any)?.id || 'unknown';
             const userId = (payload.user as any)?.id || 'unknown';
 
-            const savedSubscription = await this.subscriptionRepository.create(dto, workspaceId, userId);
-            console.log('💾 Suscripción guardada con ID:', savedSubscription.id);
+            await this.createSubscriptionService.run(
+                subscription, 
+                workspaceId, 
+                userId
+            );
             
             return NextResponse.json({
                 response_action: 'update',
@@ -154,7 +226,7 @@ export class SlackService {
                 name: nameValue.value,
                 price: price,
                 currency: currencyValue.selected_option.value,
-                renewalCycle: renewalCycleValue.selected_option.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
+                renewalCycle: renewalCycleValue.selected_option.value as RenewalCycle,
                 renewalDate: dateValue.selected_date,
                 users: users,
                 projects: projects
@@ -163,18 +235,12 @@ export class SlackService {
     }
 
     private async openModal(triggerId: string, modalView: any) {
-        const slackToken = process.env.SLACK_BOT_TOKEN;
-        
-        if (!slackToken) {
-            console.error('❌ SLACK_BOT_TOKEN not configured');
-            return this.respondWithText(':x: Error: Slack bot token not configured');
-        }
 
         try {
             const response = await fetch('https://slack.com/api/views.open', {
                 method: 'POST',
                 headers: {
-                    'Authorization': `Bearer ${slackToken}`,
+                    'Authorization': `Bearer ${this.slackToken}`,
                     'Content-Type': 'application/json'
                 },
                 body: JSON.stringify({
@@ -198,35 +264,36 @@ export class SlackService {
     }
 
     
-    private async notifyUsers(userIds: string[], message: string) {
-        const slackToken = process.env.SLACK_BOT_TOKEN;
-        
-        if (!slackToken) {
-            console.error('❌ SLACK_BOT_TOKEN not configured');
-            return;
-        }
-
-        for (const userId of userIds) {
+    public async notifyUsers(userIds: string[], message: string | { blocks: unknown[] }) {
+        const sendPromises = userIds.map(async (userId) => {
             try {
-                 await fetch('https://slack.com/api/chat.postMessage', {
+                const body = typeof message === 'string' 
+                    ? { channel: userId, text: message }
+                    : { channel: userId, blocks: message.blocks, text: 'Notification' };
+
+                const response = await fetch('https://slack.com/api/chat.postMessage', {
                     method: 'POST',
                     headers: {
-                        'Authorization': `Bearer ${slackToken}`,
+                        'Authorization': `Bearer ${this.slackToken}`,
                         'Content-Type': 'application/json'
                     },
-                    body: JSON.stringify({
-                        channel: userId,
-                        text: message
-                    })
+                    body: JSON.stringify(body)
                 });
 
+                const result = await response.json();
                 
-                
-                
+                if (!result.ok) {
+                    throw new Error(`Slack API error: ${result.error}`);
+                }
+
+                console.log(`📤 Message sent to user ${userId}`);
             } catch (error) {
                 console.error(`❌ Error notificando a ${userId}:`, error);
+                throw error;
             }
-        }
+        });
+
+        await Promise.allSettled(sendPromises);
     }
 
     

@@ -1,10 +1,10 @@
-// Tipos para datos de Slack
+import { RenewalCycle } from "../entities/Subscription";
 
 export interface SlackSubscriptionData {
   name: string;
   price: number;
   currency: string;
-  renewalCycle: 'MONTHLY' | 'YEARLY' | 'CUSTOM';
+  renewalCycle: RenewalCycle;
   renewalDate: string;
   users: string[];
   projects: string[];
