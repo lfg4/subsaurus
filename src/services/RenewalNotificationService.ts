@@ -38,9 +38,21 @@ export class RenewalNotificationService {
             subscription.renewalDate
           );
 
+          console.log(`🔍 Subscription ${subscription.id} (${subscription.name}):`, {
+            renewalDate: subscription.renewalDate,
+            usageCheckFound: !!usageCheck,
+            usageCheckId: usageCheck?.id
+          });
+
           let responses: UsageResponse[] = [];
           if (usageCheck) {
             responses = await this.usageResponseRepository.findByUsageCheck(usageCheck.id);
+            console.log(`📊 Found ${responses.length} responses for usage check ${usageCheck.id}`, {
+              withResponse: responses.filter(r => r.response).length,
+              pending: responses.filter(r => !r.response).length
+            });
+          } else {
+            console.log(`⚠️ No usage check found for subscription ${subscription.id}`);
           }
 
           subscriptionSummaries.push({

@@ -71,10 +71,20 @@ export class UsageCheckRepository {
     subscriptionId: number,
     periodEnd: Date
   ): Promise<UsageCheck | null> {
+    // Normalizar la fecha para comparar solo día/mes/año
+    const startOfDay = new Date(periodEnd);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(periodEnd);
+    endOfDay.setHours(23, 59, 59, 999);
+
     const usageCheck = await prisma.usageCheck.findFirst({
       where: {
         subscriptionId,
-        periodEnd,
+        periodEnd: {
+          gte: startOfDay,
+          lte: endOfDay,
+        },
       },
       orderBy: { createdAt: 'desc' },
     });
