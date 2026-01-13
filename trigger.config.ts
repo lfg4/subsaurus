@@ -15,16 +15,5 @@ export const config: TriggerConfig = {
       randomize: true,
     },
   },
-  build: {
-    extensions: [
-      {
-        name: "prisma",
-        onBuildComplete: async (context) => {
-          // Generar el cliente de Prisma después del build
-          await context.exec("npx", ["prisma", "generate"]);
-        },
-      },
-    ],
-  },
 };
 
