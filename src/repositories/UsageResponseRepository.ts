@@ -115,8 +115,7 @@ export class UsageResponseRepository {
       subscriptionId: response.subscriptionId,
       slackUserId: response.slackUserId,
       response: response.response,
-      respondedAt: response.respondedAt,
-      createdAt: response.createdAt,
+      respondedAt: response.respondedAt
     });
   }
 }

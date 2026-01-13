@@ -8,7 +8,6 @@ export class UsageResponse {
   slackUserId: string;
   response: ResponseType | null;
   respondedAt: Date | null;
-  createdAt: Date;
 
   constructor(data: {
     id: number;
@@ -18,7 +17,6 @@ export class UsageResponse {
     slackUserId: string;
     response: string | null;
     respondedAt: Date | null;
-    createdAt: Date;
   }) {
     this.id = data.id;
     this.slackWorkspaceId = data.slackWorkspaceId;
@@ -27,7 +25,6 @@ export class UsageResponse {
     this.slackUserId = data.slackUserId;
     this.response = data.response as ResponseType | null;
     this.respondedAt = data.respondedAt;
-    this.createdAt = data.createdAt;
   }
 
   hasResponded(): boolean {
