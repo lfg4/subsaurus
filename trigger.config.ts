@@ -1,4 +1,5 @@
 import type { TriggerConfig } from "@trigger.dev/sdk/v3";
+import { prismaExtension } from "@trigger.dev/build/extensions/prisma";
 
 export const config: TriggerConfig = {
   project: "proj_dajfencunzgvxfywqhrq",
@@ -14,6 +15,9 @@ export const config: TriggerConfig = {
       factor: 2,
       randomize: true,
     },
+  },
+  build: {
+    extensions: [prismaExtension({ schema: "prisma/schema.prisma" })],
   },
 };
 
