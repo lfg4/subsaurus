@@ -197,3 +197,5 @@ lefthook-local.yml
 
 # codebook spelling
 codebook.toml
+
+.trigger/

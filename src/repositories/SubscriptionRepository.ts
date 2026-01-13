@@ -1,21 +1,25 @@
 import { prisma } from '@/src/lib/prisma';
-import { SubscriptionEntity } from '../entities/Subscription';
-import type { CreateSubscriptionDto } from '../dtos/subscription.dto';
+import { Subscription } from '../entities/Subscription';
+import type { SlackSubscriptionData } from '../types/slack';
 
 export class SubscriptionRepository {
-  async create(dto: CreateSubscriptionDto, workspaceId: string, createdBy: string): Promise<SubscriptionEntity> {
+  async create(
+    data: SlackSubscriptionData, 
+    workspaceId: string, 
+    createdBy: string
+  ): Promise<Subscription> {
     const subscription = await prisma.subscription.create({
       data: {
         slackWorkspaceId: workspaceId,
         createdBySlackUser: createdBy,
-        name: dto.name,
-        project: dto.projects[0] || null,
-        renewalCycle: dto.renewalCycle,
-        renewalDate: new Date(dto.renewalDate),
-        costAmount: dto.price,
-        costCurrency: dto.currency,
+        name: data.name,
+        project: data.projects[0] || null,
+        renewalCycle: data.renewalCycle,
+        renewalDate: new Date(data.renewalDate),
+        costAmount: data.price,
+        costCurrency: data.currency,
         subscriptionUsers: {
-          create: dto.slackUserIds.map(userId => ({
+          create: data.users.map(userId => ({
             slackWorkspaceId: workspaceId,
             slackUserId: userId,
           }))
@@ -29,7 +33,7 @@ export class SubscriptionRepository {
     return this.toEntity(subscription);
   }
 
-  async findAll(): Promise<SubscriptionEntity[]> {
+  async findAll(): Promise<Subscription[]> {
     const subscriptions = await prisma.subscription.findMany({
       include: {
         subscriptionUsers: true
@@ -40,7 +44,7 @@ export class SubscriptionRepository {
     return subscriptions.map(sub => this.toEntity(sub));
   }
 
-  async findById(id: number): Promise<SubscriptionEntity | null> {
+  async findById(id: number): Promise<Subscription | null> {
     const subscription = await prisma.subscription.findUnique({
       where: { id },
       include: {
@@ -53,7 +57,7 @@ export class SubscriptionRepository {
     return this.toEntity(subscription);
   }
 
-  async findByUser(slackUserId: string): Promise<SubscriptionEntity[]> {
+  async findByUser(slackUserId: string): Promise<Subscription[]> {
     const subscriptions = await prisma.subscription.findMany({
       where: {
         subscriptionUsers: {
@@ -77,11 +81,12 @@ export class SubscriptionRepository {
     });
   }
 
-  private toEntity(subscription: any): SubscriptionEntity {
-    return new SubscriptionEntity({
+  private toEntity(subscription: any): Subscription {
+    return new Subscription({
       id: subscription.id,
       name: subscription.name,
       price: subscription.costAmount,
+      renewalCycle: subscription.renewalCycle,
       renewalDate: subscription.renewalDate,
       slackUserIds: subscription.subscriptionUsers?.map((su: any) => su.slackUserId) || [],
       projects: subscription.project ? [subscription.project] : [],

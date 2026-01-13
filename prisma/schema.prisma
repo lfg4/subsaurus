@@ -63,3 +63,29 @@ model SubscriptionUser {
 
   @@map("subscription_users")
 }
+
+model UsageCheck {
+  id             Int      @id @default(autoincrement())
+  slackWorkspaceId String @map("slack_workspace_id")
+  subscriptionId Int      @map("subscription_id")
+  periodStart      DateTime @default(now()) @map("period_start")
+  periodEnd      DateTime @default(now()) @map("period_end")
+  sendAt          DateTime @default(now()) @map("send_at")
+  status         String
+  createdAt      DateTime @default(now()) @map("created_at")
+
+  @@map("usage_checks")
+}
+
+model UsageResponse {
+  id             Int      @id @default(autoincrement())
+  slackWorkspaceId String @map("slack_workspace_id")
+  usageCheckId    Int     @map("usage_check_id")
+  subscriptionId Int      @map("subscription_id")
+  slackUserId     String  @map("slack_user_id")
+  response        String?
+  responsedAt     DateTime? @map("responsed_at")
+  createdAt       DateTime @default(now()) @map("created_at")
+
+  @@map("usage_responses")
+}
