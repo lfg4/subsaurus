@@ -461,11 +461,12 @@ export class SlackFactory {
             const noCount = responses.filter(r => r.response === UsageResponseType.NO).length;
             const littleCount = responses.filter(r => r.response === UsageResponseType.LITTLE).length;
             const noResponseCount = responses.filter(r => !r.response).length;
+            const hasResponses = responses.some(r => r.response !== null);
 
             const renewalCycleText = subscription.renewalCycle === RenewalCycle.MONTHLY ? 'Monthly' :
                                     subscription.renewalCycle === RenewalCycle.YEARLY ? 'Yearly' : 'Custom';
 
-            const usageText = responses.length > 0
+            const usageText = hasResponses
                 ? `\n:white_check_mark: *Yes:* ${yesCount}\n:shrug: *A Little:* ${littleCount}\n:x: *No:* ${noCount}\n:question: *No Response:* ${noResponseCount}`
                 : '\n_No usage responses collected_';
 

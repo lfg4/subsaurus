@@ -107,6 +107,7 @@ export class SlackService {
             if (!usageResponse) {
                 console.error(`❌ UsageResponse not found for check ${usageCheckId} and user ${userId}`);
                 return NextResponse.json({
+                    replace_original: true,
                     text: '❌ Your pending response was not found.',
                 });
             }
@@ -124,14 +125,14 @@ export class SlackService {
                 [UsageResponseType.LITTLE]: '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
             };
 
-            this.notifyUsers([userId], responseMessages[response]);
-
             return NextResponse.json({
-                text: '✅ Response recorded.',
+                replace_original: true,
+                text: responseMessages[response]
             });
         } catch (error) {
             console.error('❌ Error handling usage response:', error);
             return NextResponse.json({
+                replace_original: true,
                 text: '❌ There was an error processing your response.',
             });
         }
