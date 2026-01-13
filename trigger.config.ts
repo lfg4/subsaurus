@@ -17,7 +17,9 @@ export const config: TriggerConfig = {
     },
   },
   build: {
-    extensions: [prismaExtension({ schema: "prisma/schema.prisma" })],
+    extensions: [
+      prismaExtension({ mode: "modern" }),
+    ],
   },
 };
 
