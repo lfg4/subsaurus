@@ -15,7 +15,7 @@ export class UsageResponseRepository {
         subscriptionId: data.subscriptionId,
         slackUserId: data.slackUserId,
         response: null,
-        responsedAt: null,
+        respondedAt: null,
       },
     });
 
@@ -30,7 +30,7 @@ export class UsageResponseRepository {
       where: { id },
       data: {
         response,
-        responsedAt: new Date(),
+        respondedAt: new Date(),
       },
     });
 
@@ -56,7 +56,7 @@ export class UsageResponseRepository {
   async findByUsageCheck(usageCheckId: number): Promise<UsageResponse[]> {
     const responses = await prisma.usageResponse.findMany({
       where: { usageCheckId },
-      orderBy: { responsedAt: 'asc' },
+      orderBy: { respondedAt: 'asc' },
     });
 
     return responses.map(r => this.toEntity(r));
@@ -65,7 +65,7 @@ export class UsageResponseRepository {
   async findBySubscription(subscriptionId: number): Promise<UsageResponse[]> {
     const responses = await prisma.usageResponse.findMany({
       where: { subscriptionId },
-      orderBy: { responsedAt: 'desc' },
+      orderBy: { respondedAt: 'desc' },
     });
 
     return responses.map(r => this.toEntity(r));
@@ -74,7 +74,7 @@ export class UsageResponseRepository {
   async findByUser(slackUserId: string): Promise<UsageResponse[]> {
     const responses = await prisma.usageResponse.findMany({
       where: { slackUserId },
-      orderBy: { responsedAt: 'desc' },
+      orderBy: { respondedAt: 'desc' },
     });
 
     return responses.map(r => this.toEntity(r));
@@ -115,7 +115,7 @@ export class UsageResponseRepository {
       subscriptionId: response.subscriptionId,
       slackUserId: response.slackUserId,
       response: response.response,
-      responsedAt: response.responsedAt,
+      respondedAt: response.respondedAt,
       createdAt: response.createdAt,
     });
   }
