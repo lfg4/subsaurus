@@ -2,7 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
-import { Subscription } from '@/app/types';
+import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 
@@ -119,7 +119,7 @@ export function SubscriptionsList({
           <h1 className="text-4xl font-black text-gray-900">Subscriptions</h1>
           <span className="text-3xl">🍖</span>
         </div>
-        <button className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg border-2 border-green-300">
+        <button type="button" className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg border-2 border-green-300">
           <Plus className="w-5 h-5" />
           New subscription
         </button>
@@ -140,7 +140,7 @@ export function SubscriptionsList({
           </div>
           <select 
             value={sortField}
-            onChange={(e) => setSortField(e.target.value as any)}
+            onChange={(e) => setSortField(e.target.value as 'name' | 'renewalDate' | 'costAmount' | 'project')}
             className="px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
           >
             <option value="name">📝 Sort by name</option>
@@ -149,6 +149,7 @@ export function SubscriptionsList({
             <option value="costAmount">💰 Sort by cost</option>
           </select>
           <button
+            type="button"
             onClick={() => setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc')}
             className="p-3 border-2 border-green-300 rounded-xl hover:bg-green-50 font-bold text-xl transform hover:scale-110 transition-all bg-white"
           >
@@ -194,6 +195,7 @@ export function SubscriptionsList({
 
           {(filterProject !== 'all' || filterCycle !== 'all' || filterUrgency !== 'all') && (
             <button
+              type="button"
               onClick={() => {
                 setFilterProject('all');
                 setFilterCycle('all');
@@ -213,7 +215,7 @@ export function SubscriptionsList({
           <div className="text-8xl mb-4">🦖</div>
           <h3 className="text-2xl font-black text-gray-900 mb-2">The dino is hungry!</h3>
           <p className="text-gray-600 mb-6 font-semibold">No subscriptions yet. Add the first one!</p>
-          <button className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300">
+          <button type="button" className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300">
             🍖 Create subscription
           </button>
         </div>
@@ -251,36 +253,12 @@ export function SubscriptionsList({
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-bold">{sub.slackUserIds?.length || 0}</td>
                   <td className="px-6 py-4">
-                    {false ? (
-                      <div className="flex gap-1">
-                        {sub.lastCheckSummary.yes > 0 && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-black rounded-lg bg-green-100 text-green-700 border-2 border-green-300">
-                            {sub.lastCheckSummary.yes}✓
-                          </span>
-                        )}
-                        {sub.lastCheckSummary.no > 0 && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-black rounded-lg bg-red-100 text-red-700 border-2 border-red-300">
-                            {sub.lastCheckSummary.no}✗
-                          </span>
-                        )}
-                        {sub.lastCheckSummary.little > 0 && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-black rounded-lg bg-yellow-100 text-yellow-700 border-2 border-yellow-300">
-                            {sub.lastCheckSummary.little}~
-                          </span>
-                        )}
-                        {sub.lastCheckSummary.noResponse > 0 && (
-                          <span className="inline-flex items-center px-2 py-1 text-xs font-black rounded-lg bg-gray-100 text-gray-600 border-2 border-gray-300">
-                            {sub.lastCheckSummary.noResponse}—
-                          </span>
-                        )}
-                      </div>
-                    ) : (
-                      <span className="text-gray-400 text-sm font-semibold">No checks</span>
-                    )}
+                    <span className="text-gray-400 text-sm font-semibold">No checks</span>
                   </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 
+                        type="button"
                         onClick={() => handleViewDetail(sub.id)}
                         className="p-2 text-blue-400 hover:text-blue-600 transition transform hover:scale-125"
                         title="Edit"
@@ -288,6 +266,7 @@ export function SubscriptionsList({
                         <Edit2 className="w-5 h-5" />
                       </button>
                       <button 
+                        type="button"
                         onClick={() => handleDelete(sub.id)}
                         className="p-2 text-red-400 hover:text-red-600 transition transform hover:scale-125"
                         title="Delete"
@@ -312,12 +291,14 @@ export function SubscriptionsList({
             <p className="text-gray-600 mb-6 font-semibold">The dino will eat it and you won't be able to recover it...</p>
             <div className="flex gap-3">
               <button
+                type="button"
                 onClick={() => setShowDeleteModal(false)}
                 className="flex-1 px-4 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition font-bold"
               >
                 Cancel
               </button>
               <button
+                type="button"
                 onClick={confirmDelete}
                 className="flex-1 px-4 py-3 bg-gradient-to-r from-red-400 to-orange-400 text-white rounded-xl hover:from-red-500 hover:to-orange-500 transition font-bold shadow-lg border-2 border-red-300"
               >
