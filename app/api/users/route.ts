@@ -1,10 +1,11 @@
-import { getUserService } from '@/src/container';
 import { NextRequest, NextResponse } from 'next/server';
+import { prisma } from '@/src/lib/prisma';
 
 export async function GET() {
   try {
-    const userService = getUserService();
-    const users = await userService.getAllUsers();
+    const users = await prisma.user.findMany({
+      orderBy: { createdAt: 'desc' },
+    });
     return NextResponse.json(users);
   } catch (error) {
     console.error('Error fetching users:', error);
@@ -17,7 +18,6 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   try {
-    const userService = getUserService();
     const { email, name } = await request.json();
     
     if (!email) {
@@ -27,7 +27,13 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const user = await userService.createUser(email, name);
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name: name || null,
+      },
+    });
+
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
     console.error('Error creating user:', error);
