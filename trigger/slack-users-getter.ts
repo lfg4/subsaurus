@@ -1,40 +1,36 @@
-import { schedules } from "@trigger.dev/sdk/v3";
-import { getSlackUsersGetterService } from "@/src/container";
+import { schedules } from '@trigger.dev/sdk/v3';
+import { getSyncSlackUsersService } from '@/src/shared/container';
 
 export const slackUsersGetter = schedules.task({
-  id: "slack-users-getter",
-  cron: "0 0 1 * *",
+  id: 'slack-users-getter',
+  cron: '0 0 1 * *',
   run: async () => {
-    const workspaceId = "T03FUJM8E"
-    console.log("🦖 Starting slack users getter job", {
+    const workspaceId = 'T03FUJM8E';
+    console.log('🦖 Starting slack users sync job', {
       timestamp: new Date().toISOString(),
     });
 
     try {
-      const service = getSlackUsersGetterService();
-      
-      const result = await service.run(workspaceId);
-      
-      console.log("✅ Slack users getter job completed successfully", {
+      const service = getSyncSlackUsersService();
+
+      await service.execute(workspaceId);
+
+      console.log('✅ Slack users sync completed successfully', {
         workspaceId: workspaceId,
-        result: result,
       });
-      
+
       return {
         success: true,
         workspaceId: workspaceId,
-        result: result,
         timestamp: new Date().toISOString(),
       };
-      
     } catch (error) {
-      console.error("❌ Failed to get slack users", {
-        error: error instanceof Error ? error.message : "Unknown error",
+      console.error('❌ Failed to sync slack users', {
+        error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     }
   },
 });
-

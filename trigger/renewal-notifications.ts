@@ -1,48 +1,41 @@
-import { schedules } from "@trigger.dev/sdk/v3";
-import { getRenewalNotificationService } from "@/src/container";
+import { schedules } from '@trigger.dev/sdk/v3';
+import { getSendRenewalNotificationService } from '@/src/shared/container';
 
 export const renewalNotifications = schedules.task({
-  id: "renewal-notifications",
-  cron: "0 18 * * *",
+  id: 'renewal-notifications',
+  cron: '0 9 * * *',
   run: async (payload) => {
-    console.log("🦖 Starting renewal notifications job", {
+    console.log('🦖 Starting renewal notification job', {
       timestamp: new Date().toISOString(),
     });
 
-    const adminSlackUserId = process.env.ADMIN_SLACK_USER_ID;
-
-    if (!adminSlackUserId) {
-      console.error("❌ ADMIN_SLACK_USER_ID environment variable is not set");
-      throw new Error("ADMIN_SLACK_USER_ID is required");
-    }
-
     try {
-      const service = getRenewalNotificationService();
-      
-      const result = await service.run(adminSlackUserId);
-      
-      console.log("✅ Renewal notifications sent successfully", {
+      const service = getSendRenewalNotificationService();
+
+      const adminSlackUserId = process.env.ADMIN_SLACK_USER_ID || 'U06TW9RS29H';
+
+      const result = await service.execute(adminSlackUserId);
+
+      console.log('✅ Renewal notifications sent successfully', {
         notified: result.notified,
-        updated: result.updated,
+        renewed: result.renewed,
         failed: result.failed,
       });
-      
+
       return {
         success: true,
         notified: result.notified,
-        updated: result.updated,
+        renewed: result.renewed,
         failed: result.failed,
         timestamp: new Date().toISOString(),
       };
-      
     } catch (error) {
-      console.error("❌ Failed to send renewal notifications", {
-        error: error instanceof Error ? error.message : "Unknown error",
+      console.error('❌ Failed to send renewal notifications', {
+        error: error instanceof Error ? error.message : 'Unknown error',
         stack: error instanceof Error ? error.stack : undefined,
       });
-      
+
       throw error;
     }
   },
 });
-
