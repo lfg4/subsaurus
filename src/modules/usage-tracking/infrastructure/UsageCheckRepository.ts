@@ -63,6 +63,42 @@ export class UsageCheckRepository {
     return usageChecks.map(uc => this.toDomain(uc));
   }
 
+  /**
+   * Find usage check by ID
+   */
+  async findById(id: number): Promise<UsageCheck | null> {
+    const usageCheck = await prisma.usageCheck.findUnique({
+      where: { id },
+    });
+
+    if (!usageCheck) return null;
+
+    return this.toDomain(usageCheck);
+  }
+
+  /**
+   * Find all usage checks
+   */
+  async findAll(): Promise<UsageCheck[]> {
+    const usageChecks = await prisma.usageCheck.findMany({
+      orderBy: { sendAt: 'desc' },
+    });
+
+    return usageChecks.map(uc => this.toDomain(uc));
+  }
+
+  /**
+   * Find usage checks by subscription ID
+   */
+  async findBySubscriptionId(subscriptionId: number): Promise<UsageCheck[]> {
+    const usageChecks = await prisma.usageCheck.findMany({
+      where: { subscriptionId },
+      orderBy: { sendAt: 'desc' },
+    });
+
+    return usageChecks.map(uc => this.toDomain(uc));
+  }
+
   async findBySubscriptionAndPeriod(
     subscriptionId: number,
     periodEnd: Date

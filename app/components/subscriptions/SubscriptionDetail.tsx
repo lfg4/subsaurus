@@ -5,27 +5,27 @@ import { ChevronRight, Plus, X } from 'lucide-react';
 import { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 
-// Mock temporal (hasta implementar usage checks)
+
 const mockUsageChecks = [
   {
     id: 1,
-    subscription_id: 1,
-    subscription_name: 'Figma Professional',
-    period_start: '2025-12-20',
-    period_end: '2026-01-20',
-    send_at: '2026-01-15T10:00:00Z',
+    subscriptionId: 1,
+    subscriptionName: 'Figma Professional',
+    periodStart: '2025-12-20',
+    periodEnd: '2026-01-20',
+    sendAt: '2026-01-15T10:00:00Z',
     status: 'SENT',
-    responses_count: 5
+    responsesCount: 5
   },
   {
     id: 2,
-    subscription_id: 2,
-    subscription_name: 'GitHub Teams',
-    period_start: '2025-12-15',
-    period_end: '2026-01-15',
-    send_at: '2026-01-10T10:00:00Z',
+    subscriptionId: 2,
+    subscriptionName: 'GitHub Teams',
+    periodStart: '2025-12-15',
+    periodEnd: '2026-01-15',
+    sendAt: '2026-01-10T10:00:00Z',
     status: 'SENT',
-    responses_count: 10
+    responsesCount: 10
   }
 ];
 
@@ -40,10 +40,10 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
   const [formData, setFormData] = useState({
     name: '',
     project: '',
-    renewal_cycle: 'MONTHLY' as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
-    renewal_date: '',
-    cost_amount: 0,
-    cost_currency: 'EUR'
+    renewalCycle: 'MONTHLY' as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
+    renewalDate: '',
+    costAmount: 0,
+    costCurrency: 'EUR'
   });
   const [isSaving, setIsSaving] = useState(false);
 
@@ -54,11 +54,11 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         setSubscription(data);
         setFormData({
           name: data.name,
-          project: data.project,
-          renewal_cycle: data.renewal_cycle,
-          renewal_date: data.renewal_date,
-          cost_amount: data.cost_amount,
-          cost_currency: data.cost_currency
+          project: data.project || '',
+          renewalCycle: data.renewalCycle,
+          renewalDate: data.renewalDate,
+          costAmount: data.costAmount,
+          costCurrency: data.costCurrency
         });
         setIsLoading(false);
       })
@@ -77,13 +77,13 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         body: JSON.stringify(formData)
       });
 
-      if (!response.ok) throw new Error('Error al guardar');
+      if (!response.ok) throw new Error('Error saving');
 
       alert('✅ Cambios guardados correctamente');
       setCurrentPage('subscriptions');
     } catch (error) {
       console.error('Error:', error);
-      alert('❌ Error al guardar los cambios');
+      alert('❌ Error saving changes');
     } finally {
       setIsSaving(false);
     }
@@ -93,7 +93,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
     return (
       <div className="text-center py-12">
         <div className="text-8xl mb-4 animate-bounce">🦖</div>
-        <div className="text-xl font-bold text-gray-700">Cargando suscripción...</div>
+        <div className="text-xl font-bold text-gray-700">Loading subscription...</div>
       </div>
     );
   }
@@ -102,12 +102,12 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
     return (
       <div className="text-center py-12">
         <div className="text-8xl mb-4">🦖❓</div>
-        <div className="text-xl font-bold text-gray-700">Suscripción no encontrada</div>
+        <div className="text-xl font-bold text-gray-700">Subscription not found</div>
         <button 
           onClick={() => setCurrentPage('subscriptions')}
           className="mt-4 bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300"
         >
-          ← Volver a suscripciones
+          ← Back a subscriptions
         </button>
       </div>
     );
@@ -120,7 +120,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-semibold"
       >
         <ChevronRight className="w-5 h-5 rotate-180" />
-        Volver a suscripciones
+        Back a subscriptions
       </button>
 
       <div className="flex items-center gap-3 mb-8">
@@ -128,15 +128,15 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         <span className="text-3xl">✏️</span>
       </div>
 
-      {/* Información general */}
+      {}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-6 mb-6 shadow-xl">
         <h2 className="text-2xl font-bold text-gray-900 mb-6 flex items-center gap-2">
           <span className="text-2xl">📝</span>
-          Información general
+          General information
         </h2>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Nombre</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
             <input 
               type="text" 
               value={formData.name}
@@ -145,7 +145,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Proyecto</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Project</label>
             <input 
               type="text" 
               value={formData.project}
@@ -154,40 +154,40 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Ciclo de renovación</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
             <select 
-              value={formData.renewal_cycle}
-              onChange={(e) => setFormData({...formData, renewal_cycle: e.target.value as any})}
+              value={formData.renewalCycle}
+              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as any})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
-              <option value="MONTHLY">🔄 Mensual</option>
-              <option value="YEARLY">📅 Anual</option>
-              <option value="CUSTOM">⚙️ Personalizado</option>
+              <option value="MONTHLY">🔄 Monthly</option>
+              <option value="YEARLY">📅 Yearly</option>
+              <option value="CUSTOM">⚙️ Custom</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Fecha de renovación</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal date</label>
             <input 
               type="date" 
-              value={formData.renewal_date}
-              onChange={(e) => setFormData({...formData, renewal_date: e.target.value})}
+              value={formData.renewalDate}
+              onChange={(e) => setFormData({...formData, renewalDate: e.target.value})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Coste</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Cost</label>
             <input 
               type="number" 
-              value={formData.cost_amount}
-              onChange={(e) => setFormData({...formData, cost_amount: parseFloat(e.target.value)})}
+              value={formData.costAmount}
+              onChange={(e) => setFormData({...formData, costAmount: parseFloat(e.target.value)})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold"
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Moneda</label>
+            <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
             <select 
-              value={formData.cost_currency}
-              onChange={(e) => setFormData({...formData, cost_currency: e.target.value})}
+              value={formData.costCurrency}
+              onChange={(e) => setFormData({...formData, costCurrency: e.target.value})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
               <option value="EUR">💶 EUR</option>
@@ -202,50 +202,50 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             disabled={isSaving}
             className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            {isSaving ? '⏳ Guardando...' : '💾 Guardar cambios'}
+            {isSaving ? '⏳ Saving...' : '💾 Save changes'}
           </button>
           <button 
             onClick={() => setCurrentPage('subscriptions')}
             className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition font-bold"
           >
-            Cancelar
+            Cancel
           </button>
         </div>
       </div>
 
-      {/* Usuarios asignados */}
+      {}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-6 mb-6 shadow-xl">
         <div className="flex items-center justify-between mb-4">
           <h2 className="text-2xl font-bold text-gray-900 flex items-center gap-2">
             <span className="text-2xl">👥</span>
-            Usuarios asignados ({subscription.users_count || 0})
+            Assigned users ({subscription.slackUserIds?.length || 0})
           </h2>
-          <button className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition">
+          <button type="button" className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition">
             <Plus className="w-5 h-5" />
-            Agregar usuario
+            Add user
           </button>
         </div>
         <div className="space-y-2">
-          {subscription.users_count && subscription.users_count > 0 ? (
-            Array.from({ length: subscription.users_count }, (_, i) => (
+          {subscription.slackUserIds?.length && subscription.slackUserIds?.length > 0 ? (
+            Array.from({ length: subscription.slackUserIds?.length }, (_, i) => (
               <div key={i} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-black shadow-lg">
                     U{i + 1}
                   </div>
                   <div>
-                    <div className="font-bold text-gray-900">Usuario {i + 1}</div>
+                    <div className="font-bold text-gray-900">User {i + 1}</div>
                     <div className="text-sm text-gray-600 font-semibold">user{i + 1}@company.com</div>
                   </div>
                 </div>
-                {subscription.last_check_summary && (
+                {false && (
                   <div className="flex items-center gap-2">
                     <span className={`px-3 py-1 text-xs font-black rounded-lg border-2 ${
                       i % 3 === 0 ? 'bg-green-100 text-green-700 border-green-300' :
                       i % 3 === 1 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
                       'bg-gray-100 text-gray-600 border-gray-300'
                     }`}>
-                      {i % 3 === 0 ? '✅ Usa' : i % 3 === 1 ? '⚠️ Poco' : '❌ No respondió'}
+                      {i % 3 === 0 ? '✅ Uses it' : i % 3 === 1 ? '⚠️ Little' : '❌ No response'}
                     </span>
                     <button className="p-2 text-gray-400 hover:text-red-600 transform hover:scale-125 transition">
                       <X className="w-4 h-4" />
@@ -256,27 +256,27 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             ))
           ) : (
             <div className="text-center py-8 text-gray-500 font-semibold">
-              No hay usuarios asignados todavía
+              No assigned users yet
             </div>
           )}
         </div>
       </div>
 
-      {/* Histórico de checks */}
+      {}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-6 shadow-xl">
         <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
           <span className="text-2xl">📊</span>
-          Histórico de usage checks
+          Usage checks history
         </h2>
         <div className="space-y-3">
-          {mockUsageChecks.filter((c: any) => c.subscription_id === subscriptionId).map((check: any) => (
+          {mockUsageChecks.filter((c: any) => c.subscriptionId === subscriptionId).map((check: any) => (
             <div key={check.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
               <div>
                 <div className="font-bold text-gray-900">
-                  {formatDate(check.period_start)} - {formatDate(check.period_end)}
+                  {formatDate(check.periodStart)} - {formatDate(check.periodEnd)}
                 </div>
                 <div className="text-sm text-gray-600 font-semibold">
-                  Enviado: {formatDate(check.send_at)}
+                  Sent: {formatDate(check.sendAt)}
                 </div>
               </div>
               <div className="flex items-center gap-4">
@@ -287,17 +287,17 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
                 }`}>
                   {check.status}
                 </span>
-                <span className="text-sm text-gray-600 font-bold">{check.responses_count} respuestas</span>
+                <span className="text-sm text-gray-600 font-bold">{check.responsesCount} responses</span>
                 <button className="text-green-600 hover:text-green-700 transform hover:scale-125 transition">
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
           ))}
-          {mockUsageChecks.filter((c: any) => c.subscription_id === subscriptionId).length === 0 && (
+          {mockUsageChecks.filter((c: any) => c.subscriptionId === subscriptionId).length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-3">🦖</div>
-              <div className="text-gray-500 font-semibold">No hay usage checks para esta suscripción</div>
+              <div className="text-gray-500 font-semibold">No usage checks for this subscription</div>
             </div>
           )}
         </div>

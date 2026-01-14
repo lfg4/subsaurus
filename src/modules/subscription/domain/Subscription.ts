@@ -165,3 +165,4 @@ export class Subscription extends Entity<number> {
   }
 }
 
+export type SubscriptionPrimitives = ReturnType<Subscription['toPrimitives']>;

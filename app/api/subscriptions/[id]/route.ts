@@ -1,85 +1,48 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { container } from '@/src/shared/container';
+import { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
+import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
+import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
+import { RenewalCycle } from '@/src/types/enums';
 
-// Crear instancia única en desarrollo
-const prismaClientSingleton = () => {
-  return new PrismaClient();
-};
-
-declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
-
-// GET - Obtener una suscripción por ID
 export async function GET(
-  request: Request,
+  _request: Request,
   { params }: { params: Promise<{ id: string }> }
 ) {
   try {
     const { id: idStr } = await params;
     const id = parseInt(idStr);
 
-    const subscription = await prisma.subscription.findUnique({
-      where: { id }
-    });
+    if (Number.isNaN(id)) {
+      return NextResponse.json(
+        { error: 'Invalid ID' },
+        { status: 400 }
+      );
+    }
+
+    const getSubscriptionsService = container.resolve<GetSubscriptionsService>(
+      'GetSubscriptionsService'
+    );
+
+    const subscription = await getSubscriptionsService.findById(id);
 
     if (!subscription) {
       return NextResponse.json(
-        { error: 'Suscripción no encontrada' },
+        { error: 'Subscription not found' },
         { status: 404 }
       );
     }
 
-    // Transformar los nombres de campos de Prisma a lo que espera el frontend
-    return NextResponse.json({
-      id: subscription.id,
-      name: subscription.name,
-      project: subscription.project,
-      renewal_cycle: subscription.renewalCycle,
-      renewal_date: subscription.renewalDate.toISOString().split('T')[0],
-      cost_amount: subscription.costAmount,
-      cost_currency: subscription.costCurrency,
-      users_count: subscription.usersCount || 0,
-      // last_check_summary lo dejamos null por ahora ya que no tienes usage checks
-      last_check_summary: null
-    });
+    return NextResponse.json(subscription.toPrimitives());
   } catch (error) {
-    console.error('Error al obtener suscripción:', error);
+    console.error('Error fetching subscription:', error);
     return NextResponse.json(
-      { error: 'Error al obtener la suscripción' },
+      { error: 'Failed to fetch subscription' },
       { status: 500 }
     );
   }
 }
 
-// DELETE - Borrar una suscripción
-export async function DELETE(
-  request: Request,
-  { params }: { params: Promise<{ id: string }> }
-) {
-  try {
-    const { id: idStr } = await params;
-    const id = parseInt(idStr);
-
-    await prisma.subscription.delete({
-      where: { id }
-    });
-
-    return NextResponse.json({ success: true });
-  } catch (error) {
-    console.error('Error al borrar suscripción:', error);
-    return NextResponse.json(
-      { error: 'Error al borrar la suscripción' },
-      { status: 500 }
-    );
-  }
-}
-
-// PATCH - Actualizar una suscripción
 export async function PATCH(
   request: Request,
   { params }: { params: Promise<{ id: string }> }
@@ -87,25 +50,67 @@ export async function PATCH(
   try {
     const { id: idStr } = await params;
     const id = parseInt(idStr);
+
+    if (Number.isNaN(id)) {
+      return NextResponse.json(
+        { error: 'Invalid ID' },
+        { status: 400 }
+      );
+    }
+
     const body = await request.json();
 
-    await prisma.subscription.update({
-      where: { id },
-      data: {
-        name: body.name,
-        project: body.project,
-        renewalCycle: body.renewal_cycle,
-        renewalDate: new Date(body.renewal_date),
-        costAmount: body.cost_amount,
-        costCurrency: body.cost_currency,
-      }
+    const updateSubscriptionService = container.resolve<UpdateSubscriptionService>(
+      'UpdateSubscriptionService'
+    );
+
+    const subscription = await updateSubscriptionService.execute(id, {
+      name: body.name,
+      renewalCycle: body.renewalCycle as RenewalCycle,
+      renewalDate: body.renewalDate ? new Date(body.renewalDate) : undefined,
+      price: body.costAmount ? parseFloat(body.costAmount) : undefined,
+      currency: body.costCurrency,
+      projects: body.project ? [body.project] : undefined,
     });
+
+    return NextResponse.json({ success: true, data: subscription.toPrimitives() });
+  } catch (error) {
+    console.error('Error updating subscription:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to update subscription';
+    return NextResponse.json(
+      { error: errorMessage },
+      { status: 500 }
+    );
+  }
+}
+
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
+  try {
+    const { id: idStr } = await params;
+    const id = parseInt(idStr);
+
+    if (Number.isNaN(id)) {
+      return NextResponse.json(
+        { error: 'Invalid ID' },
+        { status: 400 }
+      );
+    }
+
+    const deleteSubscriptionService = container.resolve<DeleteSubscriptionService>(
+      'DeleteSubscriptionService'
+    );
+
+    await deleteSubscriptionService.execute(id);
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error al actualizar suscripción:', error);
+    console.error('Error deleting subscription:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to delete subscription';
     return NextResponse.json(
-      { error: 'Error al actualizar la suscripción' },
+      { error: errorMessage },
       { status: 500 }
     );
   }

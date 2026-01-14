@@ -1,77 +1,64 @@
 import { NextResponse } from 'next/server';
-import { PrismaClient } from '@prisma/client';
+import { container } from '@/src/shared/container';
+import type { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
+import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
+import type { RenewalCycle } from '@/src/types/enums';
 
-// Crear instancia única en desarrollo
-const prismaClientSingleton = () => {
-  return new PrismaClient();
-};
-
-declare global {
-  var prisma: undefined | ReturnType<typeof prismaClientSingleton>;
-}
-
-const prisma = globalThis.prisma ?? prismaClientSingleton();
-
-if (process.env.NODE_ENV !== 'production') globalThis.prisma = prisma;
-
-// GET - Obtener todas las suscripciones
 export async function GET() {
   try {
-    const subscriptions = await prisma.subscription.findMany({
-      include: {
-        _count: {
-          select: { subscriptionUsers: true }
-        }
-      }
-    });
+    const getSubscriptionsService = container.resolve<GetSubscriptionsService>(
+      'GetSubscriptionsService'
+    );
 
-    const formatted = subscriptions.map(sub => ({
-      id: Number(sub.id),
-      name: sub.name,
-      project: sub.project || 'Sin proyecto',
-      renewal_cycle: sub.renewalCycle,
-      renewal_date: sub.renewalDate.toISOString().split('T')[0],
-      cost_amount: Number(sub.costAmount),
-      cost_currency: sub.costCurrency,
-      users_count: sub._count.subscriptionUsers
-    }));
+    const subscriptions = await getSubscriptionsService.findAll();
+    const data = subscriptions.map(sub => sub.toPrimitives());
 
-    return NextResponse.json(formatted);
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error al obtener suscripciones:', error);
+    console.error('Error fetching subscriptions:', error);
     return NextResponse.json(
-      { error: 'Error al cargar las suscripciones' },
+      { error: 'Failed to load subscriptions' },
       { status: 500 }
     );
   }
 }
 
-// POST - Crear una nueva suscripción
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    
-    const newSubscription = await prisma.subscription.create({
-      data: {
-        slackWorkspaceId: 'T123456', // TODO: Obtener del usuario autenticado
-        createdBySlackUser: 'U123456', // TODO: Obtener del usuario autenticado
-        name: body.name,
-        project: body.project,
-        renewalCycle: body.renewal_cycle,
-        renewalDate: new Date(body.renewal_date),
-        costAmount: body.cost_amount,
-        costCurrency: body.cost_currency || 'EUR',
-      }
+
+    if (!body.name || !body.renewalCycle || !body.renewalDate || !body.costAmount) {
+      return NextResponse.json(
+        { error: 'Missing required fields: name, renewalCycle, renewalDate, costAmount' },
+        { status: 400 }
+      );
+    }
+
+    const createSubscriptionService = container.resolve<CreateSubscriptionService>(
+      'CreateSubscriptionService'
+    );
+
+    const subscription = await createSubscriptionService.execute({
+      slackWorkspaceId: body.slackWorkspaceId || 'T03FUJM8E',
+      createdBySlackUserId: body.createdBySlackUserId || 'U091BTTVCQ6',
+      name: body.name,
+      price: parseFloat(body.costAmount),
+      currency: body.costCurrency || 'EUR',
+      renewalCycle: body.renewalCycle as RenewalCycle,
+      renewalDate: body.renewalDate,
+      slackUserIds: body.slackUserIds || [],
+      projects: body.project ? [body.project] : [],
     });
 
-    return NextResponse.json({ 
-      success: true, 
-      id: Number(newSubscription.id) 
-    }, { status: 201 });
-  } catch (error) {
-    console.error('Error al crear suscripción:', error);
     return NextResponse.json(
-      { error: 'Error al crear la suscripción' },
+      { success: true, data: subscription.toPrimitives() },
+      { status: 201 }
+    );
+  } catch (error) {
+    console.error('Error creating subscription:', error);
+    const errorMessage = error instanceof Error ? error.message : 'Failed to create subscription';
+    return NextResponse.json(
+      { error: errorMessage },
       { status: 500 }
     );
   }

@@ -11,14 +11,14 @@ import { UsageChecks } from '@/app/components/checks/UsageChecks';
 import { CheckDetail } from '@/app/components/checks/CheckDetail';
 import { SettingsPage } from '@/app/components/settings/SettingsPage';
 
-// Mock data temporal
+
 const mockUser: User = {
   id: '1',
-  slack_user_id: 'U123456',
-  slack_workspace_id: 'T123456',
-  display_name: 'Admin User',
+  slackUserId: 'U123456',
+  slackWorkspaceId: 'T123456',
+  displayName: 'Admin User',
   email: 'admin@company.com',
-  avatar_url: ''
+  avatarUrl: ''
 };
 
 export default function App() {
@@ -31,7 +31,7 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Simular autenticación (por ahora)
+    
     setIsAuthenticated(true);
     setCurrentUser(mockUser);
     setIsLoading(false);
@@ -47,7 +47,7 @@ export default function App() {
       <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
         <div className="text-center">
           <div className="text-8xl mb-4 animate-bounce">🦖</div>
-          <div className="text-xl font-bold text-gray-700">Cargando...</div>
+          <div className="text-xl font-bold text-gray-700">Loading...</div>
         </div>
       </div>
     );

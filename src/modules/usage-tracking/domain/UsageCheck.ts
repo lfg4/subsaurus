@@ -118,3 +118,4 @@ export class UsageCheck extends Entity<number> {
   }
 }
 
+export type UsageCheckPrimitives = ReturnType<UsageCheck['toPrimitives']>;

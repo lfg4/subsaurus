@@ -1,36 +1,12 @@
+export type { SubscriptionPrimitives as Subscription } from '@/src/modules/subscription/domain/Subscription';
+export type { UsageCheckPrimitives as UsageCheck } from '@/src/modules/usage-tracking/domain/UsageCheck';
+export type { UsageResponsePrimitives as UsageResponse } from '@/src/modules/usage-tracking/domain/UsageResponse';
+
 export interface User {
   id: string;
-  slack_user_id: string;
-  slack_workspace_id: string;
-  display_name: string;
+  slackUserId: string;
+  slackWorkspaceId: string;
+  displayName: string;
   email: string;
-  avatar_url: string;
-}
-
-export interface Subscription {
-  id: number;
-  name: string;
-  project: string;
-  renewal_cycle: 'MONTHLY' | 'YEARLY' | 'CUSTOM';
-  renewal_date: string;
-  cost_amount: number;
-  cost_currency: string;
-  users_count?: number;
-  last_check_summary?: {
-    yes: number;
-    no: number;
-    little: number;
-    no_response: number;
-  };
-}
-
-export interface UsageCheck {
-  id: number;
-  subscription_id: number;
-  subscription_name: string;
-  period_start: string;
-  period_end: string;
-  send_at: string;
-  status: 'SCHEDULED' | 'SENT' | 'CLOSED';
-  responses_count: number;
+  avatarUrl: string;
 }

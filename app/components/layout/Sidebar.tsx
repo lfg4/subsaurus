@@ -9,9 +9,9 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
   const menuItems = [
-    { id: 'subscriptions', label: 'Suscripciones', icon: FileText, emoji: '🍖' },
+    { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖' },
     { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅' },
-    { id: 'settings', label: 'Configuración', icon: Settings, emoji: '⚙️' }
+    { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️' }
   ];
 
   return (
@@ -46,7 +46,7 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
         <div className="bg-gradient-to-r from-green-100 to-emerald-100 rounded-xl p-4 border-2 border-green-300">
           <div className="text-3xl mb-2">💡</div>
           <p className="text-xs font-bold text-gray-700">
-            ¡El dino está hambriento! Encuentra suscripciones que devorar.
+            The dino is hungry! Find subscriptions to devour.
           </p>
         </div>
       </div>
