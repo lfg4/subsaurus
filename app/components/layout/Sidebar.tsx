@@ -2,13 +2,15 @@
 
 import { FileText, Check, Settings } from 'lucide-react';
 
+type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+
 interface SidebarProps {
-  currentPage: string;
-  setCurrentPage: (page: string) => void;
+  currentPage: PageType;
+  setCurrentPage: (page: PageType) => void;
 }
 
 export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
-  const menuItems = [
+  const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string }> = [
     { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖' },
     { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅' },
     { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️' }
@@ -23,11 +25,11 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
 
       <nav className="space-y-2">
         {menuItems.map(item => {
-          const Icon = item.icon;
           const isActive = currentPage === item.id;
           return (
             <button
               key={item.id}
+              type="button"
               onClick={() => setCurrentPage(item.id)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all transform ${
                 isActive 

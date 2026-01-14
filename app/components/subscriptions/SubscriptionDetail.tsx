@@ -2,9 +2,10 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronRight, Plus, X } from 'lucide-react';
-import { Subscription } from '@/app/types';
+import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 
+type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 const mockUsageChecks = [
   {
@@ -31,7 +32,7 @@ const mockUsageChecks = [
 
 interface SubscriptionDetailProps {
   subscriptionId: number;
-  setCurrentPage: (page: string) => void;
+  setCurrentPage: (page: PageType) => void;
 }
 
 export function SubscriptionDetail({ subscriptionId, setCurrentPage }: SubscriptionDetailProps) {
@@ -54,7 +55,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         setSubscription(data);
         setFormData({
           name: data.name,
-          project: data.project || '',
+          project: data.projects?.[0] || '',
           renewalCycle: data.renewalCycle,
           renewalDate: data.renewalDate,
           costAmount: data.costAmount,
@@ -79,7 +80,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
 
       if (!response.ok) throw new Error('Error saving');
 
-      alert('✅ Cambios guardados correctamente');
+      alert('✅ Changes saved successfully');
       setCurrentPage('subscriptions');
     } catch (error) {
       console.error('Error:', error);
@@ -104,10 +105,11 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         <div className="text-8xl mb-4">🦖❓</div>
         <div className="text-xl font-bold text-gray-700">Subscription not found</div>
         <button 
+          type="button"
           onClick={() => setCurrentPage('subscriptions')}
           className="mt-4 bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300"
         >
-          ← Back a subscriptions
+          ← Back to subscriptions
         </button>
       </div>
     );
@@ -116,11 +118,12 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
   return (
     <div>
       <button 
+        type="button"
         onClick={() => setCurrentPage('subscriptions')}
         className="flex items-center gap-2 text-gray-600 hover:text-gray-900 mb-6 font-semibold"
       >
         <ChevronRight className="w-5 h-5 rotate-180" />
-        Back a subscriptions
+        Back to subscriptions
       </button>
 
       <div className="flex items-center gap-3 mb-8">
@@ -157,7 +160,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             <label className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
             <select 
               value={formData.renewalCycle}
-              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as any})}
+              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM'})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
               <option value="MONTHLY">🔄 Monthly</option>
@@ -198,6 +201,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         </div>
         <div className="mt-6 flex gap-3">
           <button 
+            type="button"
             onClick={handleSave}
             disabled={isSaving}
             className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -205,6 +209,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             {isSaving ? '⏳ Saving...' : '💾 Save changes'}
           </button>
           <button 
+            type="button"
             onClick={() => setCurrentPage('subscriptions')}
             className="px-6 py-3 border-2 border-gray-300 rounded-xl hover:bg-gray-50 transition font-bold"
           >
@@ -247,7 +252,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
                     }`}>
                       {i % 3 === 0 ? '✅ Uses it' : i % 3 === 1 ? '⚠️ Little' : '❌ No response'}
                     </span>
-                    <button className="p-2 text-gray-400 hover:text-red-600 transform hover:scale-125 transition">
+                    <button type="button" className="p-2 text-gray-400 hover:text-red-600 transform hover:scale-125 transition">
                       <X className="w-4 h-4" />
                     </button>
                   </div>
@@ -269,7 +274,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
           Usage checks history
         </h2>
         <div className="space-y-3">
-          {mockUsageChecks.filter((c: any) => c.subscriptionId === subscriptionId).map((check: any) => (
+          {mockUsageChecks.filter(c => c.subscriptionId === subscriptionId).map(check => (
             <div key={check.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
               <div>
                 <div className="font-bold text-gray-900">
@@ -288,13 +293,13 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
                   {check.status}
                 </span>
                 <span className="text-sm text-gray-600 font-bold">{check.responsesCount} responses</span>
-                <button className="text-green-600 hover:text-green-700 transform hover:scale-125 transition">
+                <button type="button" className="text-green-600 hover:text-green-700 transform hover:scale-125 transition">
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
           ))}
-          {mockUsageChecks.filter((c: any) => c.subscriptionId === subscriptionId).length === 0 && (
+          {mockUsageChecks.filter(c => c.subscriptionId === subscriptionId).length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-3">🦖</div>
               <div className="text-gray-500 font-semibold">No usage checks for this subscription</div>

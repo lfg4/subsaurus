@@ -3,6 +3,7 @@
 import { Check, ChevronRight } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
 
+type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 const mockUsageChecks = [
   {
@@ -28,7 +29,7 @@ const mockUsageChecks = [
 ];
 
 interface UsageChecksProps {
-  setCurrentPage: (page: string) => void;
+  setCurrentPage: (page: PageType) => void;
   setSelectedCheckId: (id: number) => void;
 }
 

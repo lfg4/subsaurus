@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { User, UsageCheck } from '@/app/types';
+import type { User } from '@/app/types';
 import { LoginPage } from '@/app/components/auth/LoginPage';
 import { Sidebar } from '@/app/components/layout/Sidebar';
 import { Header } from '@/app/components/layout/Header';

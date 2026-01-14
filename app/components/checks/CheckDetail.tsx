@@ -3,6 +3,7 @@
 import { ChevronRight, Clock } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
 
+type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 const mockUsageChecks = [
   {
@@ -29,7 +30,7 @@ const mockUsageChecks = [
 
 interface CheckDetailProps {
   checkId: number;
-  setCurrentPage: (page: string) => void;
+  setCurrentPage: (page: PageType) => void;
 }
 
 export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {

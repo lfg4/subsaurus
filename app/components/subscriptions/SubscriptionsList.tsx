@@ -6,10 +6,12 @@ import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 
+type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+
 interface SubscriptionsListProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  setCurrentPage: (page: string) => void;
+  setCurrentPage: (page: PageType) => void;
   setSelectedSubscriptionId: (id: number) => void;
 }
 
