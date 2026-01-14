@@ -3,7 +3,7 @@ import { getSlackUsersGetterService } from "@/src/container";
 
 export const slackUsersGetter = schedules.task({
   id: "slack-users-getter",
-  cron: "0 18 * * *",
+  cron: "0 0 1 * *",
   run: async () => {
     const workspaceId = "T03FUJM8E"
     console.log("🦖 Starting slack users getter job", {
