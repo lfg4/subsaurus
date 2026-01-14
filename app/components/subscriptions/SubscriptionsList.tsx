@@ -51,14 +51,14 @@ export function SubscriptionsList({
     );
   }
 
-  const uniqueProjects = Array.from(new Set((subscriptions || []).map(s => s.project)));
+  const uniqueProjects = Array.from(new Set((subscriptions || []).flatMap(s => s.projects)));
   const now = new Date();
   
   const filteredSubscriptions = subscriptions
     .filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                           (s.project?.toLowerCase() || '').includes(searchTerm.toLowerCase());
-      const matchesProject = filterProject === 'all' || s.project === filterProject;
+                           s.projects.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
+      const matchesProject = filterProject === 'all' || s.projects.includes(filterProject);
       const matchesCycle = filterCycle === 'all' || s.renewalCycle === filterCycle;
       
       let matchesUrgency = true;
@@ -74,7 +74,7 @@ export function SubscriptionsList({
     .sort((a, b) => {
       const modifier = sortDirection === 'asc' ? 1 : -1;
       if (sortField === 'name') return modifier * a.name.localeCompare(b.name);
-      if (sortField === 'project') return modifier * (a.project || '').localeCompare(b.project || '');
+      if (sortField === 'project') return modifier * (a.projects[0] || '').localeCompare(b.projects[0] || '');
       if (sortField === 'renewalDate') return modifier * (new Date(a.renewalDate).getTime() - new Date(b.renewalDate).getTime());
       if (sortField === 'costAmount') return modifier * (Number(a.costAmount) - Number(b.costAmount));
       return 0;
@@ -238,7 +238,7 @@ export function SubscriptionsList({
                   <td className="px-6 py-4">
                     <div className="font-bold text-gray-900">{sub.name}</div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 font-semibold">{sub.project || 'No project'}</td>
+                  <td className="px-6 py-4 text-gray-600 font-semibold">{sub.projects[0] || 'No project'}</td>
                   <td className="px-6 py-4">
                     <span className="inline-flex px-3 py-1 text-xs font-black rounded-full bg-blue-100 text-blue-700 border-2 border-blue-300">
                       {sub.renewalCycle}
