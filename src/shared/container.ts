@@ -9,6 +9,7 @@ import { RenewSubscriptionService } from '@/src/modules/subscription/application
 import { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
 import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
 import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
+import { ImportSubscriptionsService } from '@/src/modules/import/application/ImportSubscriptions.service';
 
 
 import { SendUsageCheckService } from '@/src/modules/usage-tracking/application/SendUsageCheck.service';
@@ -121,6 +122,11 @@ container.register(
 container.register(
   'DeleteSubscriptionService',
   () => new DeleteSubscriptionService(container.resolve('SubscriptionRepository'))
+);
+
+container.register(
+  'ImportSubscriptionsService',
+  () => new ImportSubscriptionsService(container.resolve('SubscriptionRepository'))
 );
 
 

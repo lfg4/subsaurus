@@ -10,6 +10,7 @@ import { SubscriptionDetail } from '@/app/components/subscriptions/SubscriptionD
 import { UsageChecks } from '@/app/components/checks/UsageChecks';
 import { CheckDetail } from '@/app/components/checks/CheckDetail';
 import { SettingsPage } from '@/app/components/settings/SettingsPage';
+import { ImportWizard } from '@/app/components/import/ImportWizard';
 
 
 const mockUser: User = {
@@ -22,7 +23,7 @@ const mockUser: User = {
 };
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings'>('subscriptions');
+  const [currentPage, setCurrentPage] = useState<'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings' | 'import'>('subscriptions');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<number | null>(null);
@@ -89,6 +90,23 @@ export default function App() {
             <CheckDetail checkId={selectedCheckId} setCurrentPage={setCurrentPage} />
           )}
           {currentPage === 'settings' && <SettingsPage currentUser={currentUser} />}
+          {currentPage === 'import' && currentUser && (
+            <div>
+              <div className="flex items-center gap-4 mb-8">
+                <span className="text-5xl">📤</span>
+                <div>
+                  <h1 className="text-4xl font-black text-gray-900">Import subscriptions</h1>
+                  <p className="text-gray-600 font-semibold">Import your subscriptions from a CSV or Excel bank statement</p>
+                </div>
+              </div>
+              <ImportWizard
+                slackWorkspaceId={currentUser.slackWorkspaceId}
+                createdBySlackUserId={currentUser.slackUserId}
+                defaultSlackUserIds={[currentUser.slackUserId]}
+                onComplete={() => setCurrentPage('subscriptions')}
+              />
+            </div>
+          )}
         </main>
       </div>
     </div>
