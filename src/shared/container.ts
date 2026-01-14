@@ -16,6 +16,7 @@ import { RecordUsageResponseService } from '@/src/modules/usage-tracking/applica
 import { ReSendUsageCheckService } from '@/src/modules/usage-tracking/application/ReSendUsageCheck.service';
 import { SendRenewalNotificationService } from '@/src/modules/usage-tracking/application/SendRenewalNotification.service';
 import { GetUsageChecksService } from '@/src/modules/usage-tracking/application/GetUsageChecks.service';
+import { GetEnrichedUsageChecksService } from '@/src/modules/usage-tracking/application/GetEnrichedUsageChecks.service';
 
 
 import { SlackClient } from '@/src/modules/slack/infrastructure/SlackClient';
@@ -128,6 +129,16 @@ container.register(
   'GetUsageChecksService',
   () => new GetUsageChecksService(container.resolve('UsageCheckRepository'))
 );
+
+container.register(
+  'GetEnrichedUsageChecksService',
+  () => new GetEnrichedUsageChecksService(
+    container.resolve('UsageCheckRepository'),
+    container.resolve('SubscriptionRepository'),
+    container.resolve('UsageResponseRepository')
+  )
+);
+
 container.register(
   'SendUsageCheckService',
   () =>
@@ -213,6 +224,8 @@ export const getDeleteSubscriptionService = () =>
 
 export const getGetUsageChecksService = () =>
   container.resolve<GetUsageChecksService>('GetUsageChecksService');
+export const getGetEnrichedUsageChecksService = () =>
+  container.resolve<GetEnrichedUsageChecksService>('GetEnrichedUsageChecksService');
 export const getSendUsageCheckService = () =>
   container.resolve<SendUsageCheckService>('SendUsageCheckService');
 export const getRecordUsageResponseService = () =>

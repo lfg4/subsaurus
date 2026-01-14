@@ -1,18 +1,17 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
-import type { GetUsageChecksService } from '@/src/modules/usage-tracking/application/GetUsageChecks.service';
-import type { UsageCheck } from '@/src/modules/usage-tracking/domain/UsageCheck';
+import type { GetEnrichedUsageChecksService } from '@/src/modules/usage-tracking/application/GetEnrichedUsageChecks.service';
 
 export async function GET(request: Request) {
   try {
     const { searchParams } = new URL(request.url);
     const subscriptionIdStr = searchParams.get('subscriptionId');
 
-    const getUsageChecksService = container.resolve<GetUsageChecksService>(
-      'GetUsageChecksService'
+    const getEnrichedUsageChecksService = container.resolve<GetEnrichedUsageChecksService>(
+      'GetEnrichedUsageChecksService'
     );
 
-    let usageChecks: UsageCheck[];
+    let usageChecks;
 
     if (subscriptionIdStr) {
       const subscriptionId = parseInt(subscriptionIdStr);
@@ -22,14 +21,12 @@ export async function GET(request: Request) {
           { status: 400 }
         );
       }
-      usageChecks = await getUsageChecksService.findBySubscriptionId(subscriptionId);
+      usageChecks = await getEnrichedUsageChecksService.execute(subscriptionId);
     } else {
-      usageChecks = await getUsageChecksService.findAll();
+      usageChecks = await getEnrichedUsageChecksService.execute();
     }
 
-    const data = usageChecks.map(uc => uc.toPrimitives());
-
-    return NextResponse.json(data);
+    return NextResponse.json(usageChecks);
   } catch (error) {
     console.error('Error fetching usage checks:', error);
     return NextResponse.json(
