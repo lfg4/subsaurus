@@ -9,11 +9,14 @@ import { CreateSubscriptionService } from '../services/CreateSubscriptionService
 import { SendUsageCheckService } from '../services/SendUsageCheckService';
 import { ReSendUsageCheckService } from '../services/ReSendUsageCheckService';
 import { RenewalNotificationService } from '../services/RenewalNotificationService';
+import { SlackUserRepository } from '../repositories/SlackUserRepository';
+import { SlackUsersGetterService } from '../services/SlackUsersGetterService';
 
 let userRepositoryInstance: UserRepository;
 let subscriptionRepositoryInstance: SubscriptionRepository;
 let usageCheckRepositoryInstance: UsageCheckRepository;
 let usageResponseRepositoryInstance: UsageResponseRepository;
+let slackUserRepositoryInstance: SlackUserRepository;
 let userServiceInstance: UserService;
 let pingServiceInstance: PingService;
 let slackServiceInstance: SlackService;
@@ -21,6 +24,7 @@ let createSubscriptionServiceInstance: CreateSubscriptionService;
 let sendUsageCheckServiceInstance: SendUsageCheckService;
 let reSendUsageCheckServiceInstance: ReSendUsageCheckService;
 let renewalNotificationServiceInstance: RenewalNotificationService;
+let slackUsersGetterServiceInstance: SlackUsersGetterService;
 export function getUserRepository(): UserRepository {
   if (!userRepositoryInstance) {
     userRepositoryInstance = new UserRepository();
@@ -47,6 +51,21 @@ export function getUsageResponseRepository(): UsageResponseRepository {
     usageResponseRepositoryInstance = new UsageResponseRepository();
   }
   return usageResponseRepositoryInstance;
+}
+
+export function getSlackUserRepository(): SlackUserRepository {
+  if (!slackUserRepositoryInstance) {
+    slackUserRepositoryInstance = new SlackUserRepository();
+  }
+  return slackUserRepositoryInstance;
+}
+
+export function getSlackUsersGetterService(): SlackUsersGetterService {
+  if (!slackUsersGetterServiceInstance) {
+    const slackUserRepository = getSlackUserRepository();
+    slackUsersGetterServiceInstance = new SlackUsersGetterService(slackUserRepository);
+  }
+  return slackUsersGetterServiceInstance;
 }
 
 export function getUserService(): UserService {
@@ -136,11 +155,13 @@ export function getRenewalNotificationService(): RenewalNotificationService {
   return renewalNotificationServiceInstance;
 }
 
+
 export function resetContainer() {
   userRepositoryInstance = undefined as any;
   subscriptionRepositoryInstance = undefined as any;
   usageCheckRepositoryInstance = undefined as any;
   usageResponseRepositoryInstance = undefined as any;
+  slackUserRepositoryInstance = undefined as any;
   userServiceInstance = undefined as any;
   pingServiceInstance = undefined as any;
   slackServiceInstance = undefined as any;
@@ -148,5 +169,6 @@ export function resetContainer() {
   sendUsageCheckServiceInstance = undefined as any;
   reSendUsageCheckServiceInstance = undefined as any;
   renewalNotificationServiceInstance = undefined as any;
+  slackUsersGetterServiceInstance = undefined as any;
 }
 
