@@ -3,35 +3,44 @@ import { container } from '@/src/shared/container';
 import type { GetAllSubscriptionsService } from '@/src/modules/subscription/application/GetAllSubscriptions.service';
 import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
 import type { RenewalCycle } from '@/src/types/enums';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
+import { standardRateLimit } from '@/app/lib/rate-limit';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+
     const getAllSubscriptionsService = container.resolve<GetAllSubscriptionsService>(
       'GetAllSubscriptionsService'
     );
 
-    const subscriptions = await getAllSubscriptionsService.execute();
+    const subscriptions = await getAllSubscriptionsService.execute(workspaceId || undefined);
     const data = subscriptions.map(sub => sub.toPrimitives());
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching subscriptions:', error);
-    return NextResponse.json(
-      { error: 'Failed to load subscriptions' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch subscriptions', 'Failed to load subscriptions');
   }
 }
 
 export async function POST(request: Request) {
+  const rateLimited = await standardRateLimit(request);
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
 
     if (!body.name || !body.renewalCycle || !body.renewalDate || !body.costAmount) {
-      return NextResponse.json(
-        { error: 'Missing required fields: name, renewalCycle, renewalDate, costAmount' },
-        { status: 400 }
-      );
+      return createValidationError('Missing required fields: name, renewalCycle, renewalDate, costAmount');
+    }
+
+    if (!body.slackWorkspaceId) {
+      return createValidationError('Missing required field: slackWorkspaceId');
+    }
+
+    if (!body.createdBySlackUserId) {
+      return createValidationError('Missing required field: createdBySlackUserId');
     }
 
     const createSubscriptionService = container.resolve<CreateSubscriptionService>(
@@ -39,8 +48,8 @@ export async function POST(request: Request) {
     );
 
     const subscription = await createSubscriptionService.execute({
-      slackWorkspaceId: body.slackWorkspaceId || 'T03FUJM8E',
-      createdBySlackUserId: body.createdBySlackUserId || 'U091BTTVCQ6',
+      slackWorkspaceId: body.slackWorkspaceId,
+      createdBySlackUserId: body.createdBySlackUserId,
       name: body.name,
       price: parseFloat(body.costAmount),
       currency: body.costCurrency || 'EUR',
@@ -55,11 +64,6 @@ export async function POST(request: Request) {
       { status: 201 }
     );
   } catch (error) {
-    console.error('Error creating subscription:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to create subscription';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return handleApiError(error, 'create subscription', error instanceof Error ? error.message : 'Failed to create subscription');
   }
 }

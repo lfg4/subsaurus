@@ -4,6 +4,7 @@ import { GetSubscriptionByIdService } from '@/src/modules/subscription/applicati
 import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
 import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
 import { RenewalCycle } from '@/src/types/enums';
+import { handleApiError, createValidationError, createNotFoundError } from '@/app/lib/api-error-handler';
 
 export async function GET(
   _request: Request,
@@ -14,10 +15,7 @@ export async function GET(
     const id = parseInt(idStr);
 
     if (Number.isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid ID');
     }
 
     const getSubscriptionByIdService = container.resolve<GetSubscriptionByIdService>(
@@ -27,19 +25,12 @@ export async function GET(
     const subscription = await getSubscriptionByIdService.execute(id);
 
     if (!subscription) {
-      return NextResponse.json(
-        { error: 'Subscription not found' },
-        { status: 404 }
-      );
+      return createNotFoundError('Subscription');
     }
 
     return NextResponse.json(subscription.toPrimitives());
   } catch (error) {
-    console.error('Error fetching subscription:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch subscription' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch subscription', 'Failed to fetch subscription');
   }
 }
 
@@ -52,10 +43,7 @@ export async function PATCH(
     const id = parseInt(idStr);
 
     if (Number.isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid ID');
     }
 
     const body = await request.json();
@@ -76,12 +64,7 @@ export async function PATCH(
 
     return NextResponse.json({ success: true, data: subscription.toPrimitives() });
   } catch (error) {
-    console.error('Error updating subscription:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to update subscription';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return handleApiError(error, 'update subscription', error instanceof Error ? error.message : 'Failed to update subscription');
   }
 }
 
@@ -94,10 +77,7 @@ export async function DELETE(
     const id = parseInt(idStr);
 
     if (Number.isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid ID');
     }
 
     const deleteSubscriptionService = container.resolve<DeleteSubscriptionService>(
@@ -108,11 +88,6 @@ export async function DELETE(
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error deleting subscription:', error);
-    const errorMessage = error instanceof Error ? error.message : 'Failed to delete subscription';
-    return NextResponse.json(
-      { error: errorMessage },
-      { status: 500 }
-    );
+    return handleApiError(error, 'delete subscription', error instanceof Error ? error.message : 'Failed to delete subscription');
   }
 }

@@ -1,9 +1,7 @@
 import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepository';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
-/**
- * Application Service: Delete Subscription Use Case
- * Deletes a subscription (cascade deletes related data via DB constraints)
- */
+
 export class DeleteSubscriptionService {
   constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 
@@ -19,7 +17,7 @@ export class DeleteSubscriptionService {
     
     await this.subscriptionRepository.delete(id);
 
-    console.log(`✅ Deleted subscription ${id}: ${subscription.name}`);
+    logger.info('Subscription deleted', { id, name: subscription.name });
   }
 }
 

@@ -1,35 +1,57 @@
 import { schedules } from '@trigger.dev/sdk/v3';
-import { getSyncSlackUsersService } from '@/src/shared/container';
+import { getSyncSlackUsersService, container } from '@/src/shared/container';
+import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export const slackUsersGetter = schedules.task({
   id: 'slack-users-getter',
   cron: '0 0 1 * *',
   run: async () => {
-    const workspaceId = 'T03FUJM8E';
-    console.log('🦖 Starting slack users sync job', {
-      timestamp: new Date().toISOString(),
-    });
+    logger.info('Starting slack users sync job');
 
     try {
+      const settingsRepository = container.resolve<SettingsRepository>('SettingsRepository');
+      const workspaceIds = await settingsRepository.getAllWorkspaceIds();
+
+      if (workspaceIds.length === 0) {
+        logger.warn('No workspaces found in settings');
+        return {
+          success: true,
+          workspaces: 0,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
       const service = getSyncSlackUsersService();
+      let synced = 0;
+      let failed = 0;
 
-      await service.execute(workspaceId);
+      for (const workspaceId of workspaceIds) {
+        try {
+          await service.execute(workspaceId);
+          logger.info('Synced users for workspace', { workspaceId });
+          synced++;
+        } catch (error) {
+          logger.error('Failed to sync workspace', { workspaceId, error });
+          failed++;
+        }
+      }
 
-      console.log('✅ Slack users sync completed successfully', {
-        workspaceId: workspaceId,
+      logger.info('Slack users sync completed', {
+        synced,
+        failed,
+        total: workspaceIds.length,
       });
 
       return {
         success: true,
-        workspaceId: workspaceId,
+        synced,
+        failed,
+        total: workspaceIds.length,
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('❌ Failed to sync slack users', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
+      logger.error('Failed to sync slack users', { error });
       throw error;
     }
   },

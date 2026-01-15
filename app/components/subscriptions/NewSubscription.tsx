@@ -2,17 +2,20 @@
 
 import { useState, useEffect } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
-import { subscriptionsApi } from '@/app/lib/api';
+import { subscriptionsApi, usersApi, type SlackUserDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
 import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
+import { toast } from 'sonner';
+import type { User } from '@/app/types';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 interface NewSubscriptionProps {
   setCurrentPage: (page: PageType) => void;
+  currentUser: User;
 }
 
-export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
+export function NewSubscription({ setCurrentPage, currentUser }: NewSubscriptionProps) {
   const [formData, setFormData] = useState({
     name: '',
     project: '',
@@ -22,24 +25,23 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     costCurrency: 'EUR'
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [slackUsers, setSlackUsers] = useState<any[]>([]);
+  const [slackUsers, setSlackUsers] = useState<SlackUserDTO[]>([]);
   const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
   useEffect(() => {
-    fetch('/api/users')
-      .then(res => res.json())
-      .then(data => setSlackUsers(Array.isArray(data) ? data : []))
-      .catch(err => console.error('Error loading users:', err));
-  }, []);
+    usersApi.getAll(currentUser.slackWorkspaceId)
+      .then((data: SlackUserDTO[]) => setSlackUsers(Array.isArray(data) ? data : []))
+      .catch(() => {});
+  }, [currentUser.slackWorkspaceId]);
   
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      alert('⚠️ Name is required');
+      toast.warning('Name is required');
       return;
     }
     if (!formData.renewalDate) {
-      alert('⚠️ Renewal date is required');
+      toast.warning('Renewal date is required');
       return;
     }
 
@@ -47,14 +49,15 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     try {
       await subscriptionsApi.create({
         ...formData,
-        slackUserIds: selectedUserIds.length > 0 ? selectedUserIds : []
+        slackUserIds: selectedUserIds.length > 0 ? selectedUserIds : [],
+        slackWorkspaceId: currentUser.slackWorkspaceId,
+        createdBySlackUserId: currentUser.slackUserId
       });
 
-      alert('✅ Subscription created successfully!');
+      toast.success('Subscription created successfully!');
       setCurrentPage('subscriptions');
-    } catch (error) {
-      console.error('Error:', error);
-      alert('❌ Error creating subscription');
+    } catch {
+      toast.error('Error creating subscription');
     } finally {
       setIsSaving(false);
     }
@@ -69,7 +72,14 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
   };
 
   const getAvailableUsers = () => {
-    return slackUsers.filter(u => !selectedUserIds.includes(u.slackUserId));
+    return slackUsers
+      .filter(u => !selectedUserIds.includes(u.slackUserId))
+      .map(u => ({
+        slackUserId: u.slackUserId,
+        displayName: u.displayName,
+        email: u.email || '',
+        avatarUrl: u.avatarUrl
+      }));
   };
 
   const getUserInfo = (userId: string) => {
@@ -192,7 +202,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
                       {user.avatarUrl ? (
                         <img
                           src={user.avatarUrl}
-                          alt={user.displayName || user.email}
+                          alt={user.displayName || user.email || 'User'}
                           className="w-10 h-10 rounded-full shadow-lg"
                         />
                       ) : (
@@ -201,8 +211,8 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
                         </div>
                       )}
                       <div>
-                        <div className="font-bold text-gray-900">{user.displayName || user.email}</div>
-                        <div className="text-sm text-gray-600 font-semibold">{user.email}</div>
+                        <div className="font-bold text-gray-900">{user.displayName || user.email || 'Unknown'}</div>
+                        <div className="text-sm text-gray-600 font-semibold">{user.email || ''}</div>
                       </div>
                     </div>
                     <button

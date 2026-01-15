@@ -6,22 +6,29 @@ import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
-import { subscriptionsApi } from '@/app/lib/api';
+import { subscriptionsApi, usageChecksApi } from '@/app/lib/api';
+import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+
+import type { User } from '@/app/types';
 
 interface SubscriptionsListProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   setCurrentPage: (page: PageType) => void;
   setSelectedSubscriptionId: (id: number) => void;
+  workspaceId: string;
+  currentUser: User;
 }
 
 export function SubscriptionsList({ 
   searchTerm, 
   setSearchTerm, 
   setCurrentPage, 
-  setSelectedSubscriptionId 
+  setSelectedSubscriptionId,
+  workspaceId,
+  currentUser
 }: SubscriptionsListProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -37,19 +44,18 @@ export function SubscriptionsList({
 
 useEffect(() => {
   Promise.all([
-    subscriptionsApi.getAll(),
-    fetch('/api/usage-checks').then(res => res.json())
+    subscriptionsApi.getAll(workspaceId),
+    usageChecksApi.getAll(undefined, workspaceId)
   ])
     .then(([subscriptionsData, checksData]) => {
       setSubscriptions(subscriptionsData);
       setUsageChecks(Array.isArray(checksData) ? checksData : []);
       setIsLoading(false);
     })
-    .catch(err => {
-      console.error('Error:', err);
+    .catch(() => {
       setIsLoading(false);
     });
-}, []);
+}, [workspaceId]);
 
   const getLastCheck = (subscriptionId: number) => {
     const subChecks = usageChecks
@@ -70,12 +76,13 @@ useEffect(() => {
 
   if (showNewSubscription) {
   return <NewSubscription 
+    currentUser={currentUser}
     setCurrentPage={() => { 
       setShowNewSubscription(false); 
       setCurrentPage('subscriptions');
-      subscriptionsApi.getAll()
+      subscriptionsApi.getAll(workspaceId)
         .then(data => setSubscriptions(data))
-        .catch(err => console.error('Error:', err));
+        .catch(() => {});
     }} 
   />;
 }
@@ -124,14 +131,13 @@ useEffect(() => {
     
     try {
       await subscriptionsApi.delete(deleteId);
-      const data = await subscriptionsApi.getAll();
+      const data = await subscriptionsApi.getAll(workspaceId);
       setSubscriptions(data);
       
       setShowDeleteModal(false);
       setDeleteId(null);
-    } catch (err) {
-      console.error('Error:', err);
-      alert('Error deleting subscription');
+    } catch {
+      toast.error('Error deleting subscription');
     }
   };
 

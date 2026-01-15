@@ -3,10 +3,12 @@
 import { useState, useEffect } from 'react';
 import { ChevronRight, Plus, X } from 'lucide-react';
 import type { Subscription } from '@/app/types';
+import type { User } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
-import { subscriptionsApi } from '@/app/lib/api';
+import { subscriptionsApi, usageChecksApi, usersApi, type UpdateSubscriptionDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
 import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
+import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -17,9 +19,10 @@ interface SubscriptionDetailProps {
   subscriptionId: number;
   setCurrentPage: (page: PageType) => void;
   setSelectedCheckId: (id: number) => void;
+  currentUser: User;
 }
 
-export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelectedCheckId }: SubscriptionDetailProps) {
+export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelectedCheckId, currentUser }: SubscriptionDetailProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -38,8 +41,8 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelected
 useEffect(() => {
   Promise.all([
     subscriptionsApi.getById(subscriptionId),
-    fetch(`/api/usage-checks?subscriptionId=${subscriptionId}`).then(res => res.json()),
-    fetch('/api/users').then(res => res.json())
+    usageChecksApi.getAll(subscriptionId),
+    usersApi.getAll(currentUser.slackWorkspaceId)
   ])
     .then(([data, checksData, usersData]) => {
       setSubscription(data);
@@ -55,8 +58,7 @@ useEffect(() => {
       setSlackUsers(Array.isArray(usersData) ? usersData : []);
       setIsLoading(false);
     })
-    .catch(err => {
-      console.error('Error:', err);
+    .catch(() => {
       setIsLoading(false);
     });
 }, [subscriptionId]);
@@ -68,23 +70,15 @@ const getUserInfo = (slackUserId: string) => {
 const handleSave = async () => {
   setIsSaving(true);
   try {
-    const dataToSend = {
-      ...formData,
-      slackUserIds: subscription?.slackUserIds || []
-    };
-    
-    console.log('📤 Sending data:', dataToSend);
-    
-    await subscriptionsApi.update(subscriptionId, dataToSend);
+    await subscriptionsApi.update(subscriptionId, formData);
 
-    alert('✅ Changes saved successfully');
-    setCurrentPage('subscriptions');
-  } catch (error) {
-    console.error('Error:', error);
-    alert('❌ Error saving changes');
-  } finally {
-    setIsSaving(false);
-  }
+    toast.success('Changes saved successfully');
+      setCurrentPage('subscriptions');
+    } catch {
+      toast.error('Error saving changes');
+    } finally {
+      setIsSaving(false);
+    }
 };
 
   const handleViewCheck = (checkId: number) => {
@@ -98,14 +92,15 @@ const handleAddUsers = async (newUserIds: string[]) => {
     ...newUserIds.filter(id => !subscription?.slackUserIds?.includes(id))
   ];
 
-  await subscriptionsApi.update(subscriptionId, {
-    ...formData,
+  const updateData: UpdateSubscriptionDTO = {
     slackUserIds: updatedUserIds
-  });
+  };
+
+  await subscriptionsApi.update(subscriptionId, updateData);
 
   const updatedSubscription = await subscriptionsApi.getById(subscriptionId);
   setSubscription(updatedSubscription);
-  alert('✅ Users added successfully');
+  toast.success('Users added successfully');
 };
 
 const getAvailableUsers = () => {

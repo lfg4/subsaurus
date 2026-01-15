@@ -1,7 +1,9 @@
 'use client';
 
-import { useId } from 'react';
+import { useId, useState, useEffect } from 'react';
 import type { User } from '@/app/types';
+import { settingsApi } from '@/app/lib/api';
+import { toast } from 'sonner';
 
 interface SettingsPageProps {
   currentUser: User | null;
@@ -9,7 +11,42 @@ interface SettingsPageProps {
 
 export function SettingsPage({ currentUser }: SettingsPageProps) {
   const checkTimingId = useId();
+  const [daysBeforeRenewal, setDaysBeforeRenewal] = useState<number>(7);
+  const [isSaving, setIsSaving] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   
+  useEffect(() => {
+    if (currentUser?.slackWorkspaceId) {
+      settingsApi.get(currentUser.slackWorkspaceId)
+        .then(settings => {
+          setDaysBeforeRenewal(settings.daysBeforeRenewal);
+          setIsLoading(false);
+        })
+        .catch(() => {
+          setIsLoading(false);
+        });
+    } else {
+      setIsLoading(false);
+    }
+  }, [currentUser]);
+
+  const handleSave = async () => {
+    if (!currentUser?.slackWorkspaceId) {
+      toast.error('Workspace ID not found');
+      return;
+    }
+
+    setIsSaving(true);
+    try {
+      await settingsApi.update(currentUser.slackWorkspaceId, daysBeforeRenewal);
+      toast.success('Settings saved successfully');
+    } catch {
+      toast.error('Error saving settings');
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <div>
       <h1 className="text-3xl font-bold text-gray-900 mb-8">Settings</h1>
@@ -45,16 +82,30 @@ export function SettingsPage({ currentUser }: SettingsPageProps) {
             <label htmlFor={checkTimingId} className="block text-sm font-medium text-gray-700 mb-2">
               Send check before renewal
             </label>
-            <select id={checkTimingId} className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent">
+            <select 
+              id={checkTimingId} 
+              value={daysBeforeRenewal}
+              onChange={(e) => setDaysBeforeRenewal(Number(e.target.value))}
+              disabled={isLoading}
+              className="w-full max-w-xs px-3 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-transparent disabled:bg-gray-100"
+            >
               <option value="5">5 days before</option>
               <option value="7">7 days before</option>
               <option value="14">14 days before</option>
               <option value="30">30 days before</option>
             </select>
+            <p className="text-sm text-gray-500 mt-2">
+              This applies to new subscriptions. Reminder is always sent 3 days before the end.
+            </p>
           </div>
           <div className="pt-4">
-            <button type="button" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-              Save settings
+            <button 
+              type="button" 
+              onClick={handleSave}
+              disabled={isSaving || isLoading}
+              className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition disabled:bg-gray-400 disabled:cursor-not-allowed"
+            >
+              {isSaving ? 'Saving...' : 'Save settings'}
             </button>
           </div>
         </div>

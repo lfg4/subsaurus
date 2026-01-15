@@ -4,7 +4,7 @@ import type { SlackUser } from '../domain/SlackUser';
 export class GetSlackUsersService {
   constructor(private slackUserRepository: SlackUserRepository) {}
 
-  async execute(): Promise<SlackUser[]> {
-    return this.slackUserRepository.findAll();
+  async execute(workspaceId: string): Promise<SlackUser[]> {
+    return this.slackUserRepository.findByWorkspaceId(workspaceId);
   }
 }

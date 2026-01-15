@@ -3,9 +3,6 @@ import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepos
 import { Money } from '../domain/Money';
 import { RenewalCycle } from '@/src/types/enums';
 
-/**
- * DTO for updating a subscription
- */
 export interface UpdateSubscriptionDTO {
   name?: string;
   renewalCycle?: RenewalCycle;
@@ -16,62 +13,50 @@ export interface UpdateSubscriptionDTO {
   slackUserIds?: string[];
 }
 
-/**
- * Application Service: Update Subscription Use Case
- * Updates an existing subscription
- */
+
 export class UpdateSubscriptionService {
   constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 
   async execute(id: number, data: UpdateSubscriptionDTO): Promise<Subscription> {
-    
     const subscription = await this.subscriptionRepository.findById(id);
 
     if (!subscription) {
       throw new Error(`Subscription with ID ${id} not found`);
     }
 
-    
-    const updateData: any = {};
-
     if (data.name !== undefined) {
-      if (!data.name || data.name.trim().length === 0) {
-        throw new Error('Subscription name cannot be empty');
-      }
-      updateData.name = data.name;
+      subscription.updateName(data.name);
     }
 
     if (data.renewalCycle !== undefined) {
-      updateData.renewalCycle = data.renewalCycle;
+      subscription.updateRenewalCycle(data.renewalCycle);
     }
 
     if (data.renewalDate !== undefined) {
-      updateData.renewalDate = data.renewalDate;
+      subscription.updateRenewalDate(data.renewalDate);
     }
 
     if (data.price !== undefined && data.currency !== undefined) {
       const cost = new Money(data.price, data.currency);
-      updateData.costAmount = cost.amount;
-      updateData.costCurrency = cost.currency;
+      subscription.updateCost(cost);
     }
 
     if (data.projects !== undefined) {
-      updateData.projects = data.projects;
+      subscription.updateProjects(data.projects);
     }
 
     if (data.slackUserIds !== undefined) {
-  await this.subscriptionRepository.updateUsers(id, data.slackUserIds);
-    }
-    
-    await this.subscriptionRepository.updateFields(id, updateData);
-
-    
-    const updated = await this.subscriptionRepository.findById(id);
-    if (!updated) {
-      throw new Error('Failed to retrieve updated subscription');
+      subscription.updateUsers(data.slackUserIds);
+      await this.subscriptionRepository.updateUsersInDatabase(
+        id,
+        subscription.slackWorkspaceId,
+        data.slackUserIds
+      );
     }
 
-    return updated;
+    await this.subscriptionRepository.update(subscription);
+
+    return subscription;
   }
 }
 

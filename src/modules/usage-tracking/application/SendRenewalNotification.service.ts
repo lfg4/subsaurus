@@ -5,6 +5,7 @@ import type { SlackClient } from '@/src/modules/slack/infrastructure/SlackClient
 import type { SlackMessageBuilder } from '@/src/modules/slack/infrastructure/SlackMessageBuilder';
 import { RenewSubscriptionService } from '@/src/modules/subscription/application/RenewSubscription.service';
 import { UsageResponse } from '../domain/UsageResponse';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 
 export interface SendRenewalNotificationResult {
@@ -31,10 +32,10 @@ export class SendRenewalNotificationService {
     try {
       const renewingSubscriptions = await this.subscriptionRepository.findRenewingTomorrow();
 
-      console.log(`📋 Found ${renewingSubscriptions.length} subscriptions renewing tomorrow`);
+      logger.info('Found subscriptions renewing tomorrow', { count: renewingSubscriptions.length });
 
       if (renewingSubscriptions.length === 0) {
-        console.log('✅ No subscriptions to renew');
+        logger.info('No subscriptions to renew');
         return { notified: 0, renewed: 0, failed: 0 };
       }
 
@@ -47,7 +48,9 @@ export class SendRenewalNotificationService {
             subscription.renewalDate
           );
 
-          console.log(`🔍 Subscription ${subscription.id} (${subscription.name}):`, {
+          logger.debug('Processing subscription for renewal', {
+            subscriptionId: subscription.id,
+            name: subscription.name,
             renewalDate: subscription.renewalDate,
             usageCheckFound: !!usageCheck,
             usageCheckId: usageCheck?.id,
@@ -56,12 +59,14 @@ export class SendRenewalNotificationService {
           let responses: UsageResponse[] = [];
           if (usageCheck) {
             responses = await this.usageResponseRepository.findByUsageCheck(usageCheck.id);
-            console.log(`📊 Found ${responses.length} responses for usage check ${usageCheck.id}`, {
+            logger.debug('Found responses for usage check', {
+              usageCheckId: usageCheck.id,
+              totalResponses: responses.length,
               withResponse: responses.filter(r => r.hasResponded()).length,
               pending: responses.filter(r => !r.hasResponded()).length,
             });
           } else {
-            console.log(`⚠️ No usage check found for subscription ${subscription.id}`);
+            logger.warn('No usage check found for subscription', { subscriptionId: subscription.id });
           }
 
           subscriptionSummaries.push({
@@ -72,9 +77,12 @@ export class SendRenewalNotificationService {
           await this.renewSubscriptionService.execute(subscription.id);
           renewed++;
 
-          console.log(`✅ Renewed subscription ${subscription.id}`);
+          logger.info('Subscription renewed', { subscriptionId: subscription.id });
         } catch (error) {
-          console.error(`❌ Error processing subscription ${subscription.id}:`, error);
+          logger.error('Error processing subscription for renewal', {
+            subscriptionId: subscription.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
           failed++;
         }
       }
@@ -85,11 +93,13 @@ export class SendRenewalNotificationService {
       await this.slackClient.sendMessage(adminSlackUserId, message);
       notified = 1;
 
-      console.log(`✅ Renewal notification sent to admin`);
+      logger.info('Renewal notification sent to admin', { adminSlackUserId });
 
       return { notified, renewed, failed };
     } catch (error) {
-      console.error('❌ Error in SendRenewalNotificationService:', error);
+      logger.error('Error in SendRenewalNotificationService', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

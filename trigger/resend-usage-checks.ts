@@ -1,20 +1,19 @@
 import { schedules } from '@trigger.dev/sdk/v3';
 import { getReSendUsageCheckService } from '@/src/shared/container';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export const resendUsageChecks = schedules.task({
   id: 'resend-usage-checks',
   cron: '0 18 * * *',
   run: async (payload) => {
-    console.log('🦖 Starting resend usage check job', {
-      timestamp: new Date().toISOString(),
-    });
+    logger.info('Starting resend usage check job');
 
     try {
       const service = getReSendUsageCheckService();
 
-      const result = await service.execute(3);
+      const result = await service.execute({ daysBeforeEnd: 3 });
 
-      console.log('✅ Usage check reminders sent successfully', {
+      logger.info('Usage check reminders sent successfully', {
         sent: result.sent,
         failed: result.failed,
       });
@@ -26,11 +25,7 @@ export const resendUsageChecks = schedules.task({
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('❌ Failed to resend usage checks', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
+      logger.error('Failed to resend usage checks', { error });
       throw error;
     }
   },

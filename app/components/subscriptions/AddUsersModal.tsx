@@ -46,8 +46,7 @@ export function AddUsersModal({ isOpen, onClose, availableUsers, onAddUsers }: A
     try {
       await onAddUsers(selectedUsers);
       handleClose();
-    } catch (error) {
-      console.error('Error adding users:', error);
+    } catch {
       alert('❌ Error adding users');
     } finally {
       setIsAdding(false);

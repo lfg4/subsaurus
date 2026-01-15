@@ -12,25 +12,24 @@ type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-deta
 interface UsageChecksProps {
   setCurrentPage: (page: PageType) => void;
   setSelectedCheckId: (id: number) => void;
+  workspaceId: string;
 }
 
-export function UsageChecks({ setCurrentPage, setSelectedCheckId }: UsageChecksProps) {
+export function UsageChecks({ setCurrentPage, setSelectedCheckId, workspaceId }: UsageChecksProps) {
   const [checks, setChecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    usageChecksApi.getAll()
+    usageChecksApi.getAll(undefined, workspaceId)
       .then(data => {
-        console.log('API Response:', data);
         setChecks(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch(() => {
         setChecks([]);
         setIsLoading(false);
       });
-  }, []);
+  }, [workspaceId]);
 
   if (isLoading) {
     return (

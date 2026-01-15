@@ -1,0 +1,6 @@
+
+export const AUTH_CONSTANTS = {
+  DEFAULT_SESSION_DURATION_DAYS: 7,
+  SESSION_TOKEN_LENGTH_BYTES: 32,
+} as const;
+

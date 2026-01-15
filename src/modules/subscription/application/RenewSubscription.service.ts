@@ -1,13 +1,15 @@
 import type { Subscription } from '../domain/Subscription';
 import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepository';
 import type { UsageCheckRepository } from '@/src/modules/usage-tracking/infrastructure/UsageCheckRepository';
+import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
 import { UsageCheck } from '@/src/modules/usage-tracking/domain/UsageCheck';
 
 
 export class RenewSubscriptionService {
   constructor(
     private readonly subscriptionRepository: SubscriptionRepository,
-    private readonly usageCheckRepository: UsageCheckRepository
+    private readonly usageCheckRepository: UsageCheckRepository,
+    private readonly settingsRepository: SettingsRepository
   ) {}
 
   async execute(subscriptionId: number): Promise<Subscription> {
@@ -19,7 +21,8 @@ export class RenewSubscriptionService {
 
     subscription.renew();
 
-    const usageCheckSchedule = subscription.scheduleNextUsageCheck();
+    const daysBeforeRenewal = await this.settingsRepository.getDaysBeforeRenewal(subscription.slackWorkspaceId);
+    const usageCheckSchedule = subscription.scheduleNextUsageCheck(daysBeforeRenewal);
 
     await this.subscriptionRepository.update(subscription);
 

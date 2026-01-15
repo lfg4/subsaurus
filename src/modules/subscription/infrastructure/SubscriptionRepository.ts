@@ -37,40 +37,18 @@ export class SubscriptionRepository {
     await prisma.subscription.update({
       where: { id: primitives.id },
       data: {
+        name: primitives.name,
+        renewalCycle: primitives.renewalCycle,
         renewalDate: primitives.renewalDate,
         costAmount: primitives.costAmount,
         costCurrency: primitives.costCurrency,
+        project: primitives.projects[0] || null,
+        updatedAt: primitives.updatedAt,
       },
     });
   }
 
-  /**
-   * Update specific fields of a subscription
-   */
-  async updateFields(id: number, data: any): Promise<void> {
-    await prisma.subscription.update({
-      where: { id },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.renewalCycle !== undefined && { renewalCycle: data.renewalCycle }),
-        ...(data.renewalDate !== undefined && { renewalDate: data.renewalDate }),
-        ...(data.costAmount !== undefined && { costAmount: data.costAmount }),
-        ...(data.costCurrency !== undefined && { costCurrency: data.costCurrency }),
-        ...(data.projects !== undefined && { project: data.projects[0] || null }),
-      },
-    });
-  }
-
-async updateUsers(subscriptionId: number, slackUserIds: string[]): Promise<void> {
-    const subscription = await prisma.subscription.findUnique({
-      where: { id: subscriptionId },
-      select: { slackWorkspaceId: true },
-    });
-
-    if (!subscription) {
-      throw new Error(`Subscription ${subscriptionId} not found`);
-    }
-
+async updateUsersInDatabase(subscriptionId: number, slackWorkspaceId: string, slackUserIds: string[]): Promise<void> {
     await prisma.subscriptionUser.deleteMany({
       where: { subscriptionId },
     });
@@ -79,16 +57,13 @@ async updateUsers(subscriptionId: number, slackUserIds: string[]): Promise<void>
       await prisma.subscriptionUser.createMany({
         data: slackUserIds.map(userId => ({
           subscriptionId,
-          slackWorkspaceId: subscription.slackWorkspaceId,
+          slackWorkspaceId,
           slackUserId: userId,
         })),
       });
     }
   }
 
-  /**
-   * Delete a subscription
-   */
   async delete(id: number): Promise<void> {
     await prisma.subscription.delete({
       where: { id },
@@ -108,11 +83,9 @@ async updateUsers(subscriptionId: number, slackUserIds: string[]): Promise<void>
     return this.toDomain(subscriptionData);
   }
 
-  /**
-   * Find all subscriptions
-   */
-  async findAll(): Promise<Subscription[]> {
+  async findAll(slackWorkspaceId?: string): Promise<Subscription[]> {
     const subscriptions = await prisma.subscription.findMany({
+      where: slackWorkspaceId ? { slackWorkspaceId } : undefined,
       include: {
         subscriptionUsers: true,
       },
@@ -122,9 +95,6 @@ async updateUsers(subscriptionId: number, slackUserIds: string[]): Promise<void>
     return subscriptions.map(s => this.toDomain(s));
   }
 
-  /**
-   * Find subscriptions renewing tomorrow
-   */
   async findRenewingTomorrow(): Promise<Subscription[]> {
     const now = new Date();
     const tomorrow = new Date(Date.UTC(

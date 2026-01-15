@@ -1,20 +1,19 @@
 import { schedules } from '@trigger.dev/sdk/v3';
 import { getSendUsageCheckService } from '@/src/shared/container';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export const sendUsageChecks = schedules.task({
   id: 'send-usage-checks',
   cron: '0 10 * * *',
   run: async (payload) => {
-    console.log('🦖 Starting usage check job', {
-      timestamp: new Date().toISOString(),
-    });
+    logger.info('Starting usage check job');
 
     try {
       const service = getSendUsageCheckService();
 
       const result = await service.execute();
 
-      console.log('✅ Usage checks sent successfully', {
+      logger.info('Usage checks sent successfully', {
         sent: result.sent,
         failed: result.failed,
       });
@@ -26,11 +25,7 @@ export const sendUsageChecks = schedules.task({
         timestamp: new Date().toISOString(),
       };
     } catch (error) {
-      console.error('❌ Failed to send usage checks', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
+      logger.error('Failed to send usage checks', { error });
       throw error;
     }
   },
