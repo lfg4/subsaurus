@@ -51,7 +51,6 @@ export class AuthenticateUserService {
 
   async execute(code: string): Promise<AuthResult> {
     try {
-      // 1. Intercambiar code por access_token
       const oauthResponse = await this.exchangeCodeForToken(code);
       
       if (!oauthResponse.ok || !oauthResponse.authed_user?.access_token) {
@@ -62,7 +61,6 @@ export class AuthenticateUserService {
         };
       }
 
-      // 2. Obtener información del usuario usando OpenID Connect
       const userInfo = await this.getUserInfo(oauthResponse.authed_user.access_token);
       
       if (!userInfo.ok || !userInfo['https://slack.com/user_id'] || !userInfo['https://slack.com/team_id']) {
@@ -76,7 +74,6 @@ export class AuthenticateUserService {
       const slackUserId = userInfo['https://slack.com/user_id'];
       const workspaceId = userInfo['https://slack.com/team_id'];
 
-      // 3. VALIDACIÓN 1: ¿Workspace registrado y activo?
       const workspace = await this.settingsRepository.findByWorkspace(workspaceId);
       
       if (!workspace) {
@@ -95,7 +92,6 @@ export class AuthenticateUserService {
         };
       }
 
-      // 4. VALIDACIÓN 2: ¿Usuario existe en nuestra BD?
       const user = await this.slackUserRepository.findBySlackUserId(slackUserId);
       
       if (!user) {
@@ -106,7 +102,6 @@ export class AuthenticateUserService {
         };
       }
 
-      // 5. VALIDACIÓN 3: ¿Usuario está activo?
       if (!user.isActive) {
         return {
           success: false,
@@ -115,7 +110,6 @@ export class AuthenticateUserService {
         };
       }
 
-      // 6. VALIDACIÓN 4: ¿Usuario tiene rol admin?
       if (user.role !== 'admin') {
         return {
           success: false,
@@ -124,10 +118,8 @@ export class AuthenticateUserService {
         };
       }
 
-      // 7. Limpiar sesiones anteriores del usuario
       await this.sessionRepository.deleteByUserId(slackUserId);
 
-      // 8. Crear nueva sesión
       const session = await this.sessionRepository.create(slackUserId, workspaceId, 7);
 
       console.log(`✅ User authenticated: ${slackUserId} from workspace ${workspaceId}`);

@@ -15,7 +15,6 @@ export class ValidateSessionService {
 
   async execute(token: string): Promise<ValidateSessionResult> {
     try {
-      // 1. Buscar sesión por token
       const session = await this.sessionRepository.findByToken(token);
 
       if (!session) {
@@ -25,12 +24,9 @@ export class ValidateSessionService {
         };
       }
 
-      // 2. Validar que la sesión no haya expirado (ya lo hace findByToken)
-      // 3. Buscar usuario
       const user = await this.slackUserRepository.findBySlackUserId(session.slackUserId);
 
       if (!user) {
-        // Usuario fue eliminado, invalidar sesión
         await this.sessionRepository.delete(session.id);
         return {
           valid: false,
@@ -38,7 +34,6 @@ export class ValidateSessionService {
         };
       }
 
-      // 4. Validar que usuario esté activo
       if (!user.isActive) {
         await this.sessionRepository.delete(session.id);
         return {
@@ -47,12 +42,11 @@ export class ValidateSessionService {
         };
       }
 
-      // 5. Validar que usuario siga siendo admin
       if (user.role !== 'admin') {
         await this.sessionRepository.delete(session.id);
         return {
           valid: false,
-          error: 'User is no longer an admin',
+          error: 'User is not an admin',
         };
       }
 
