@@ -1,10 +1,13 @@
 import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
+import { container } from '@/src/shared/container';
+import type { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
 
 const publicPaths = [
   '/login',
   '/api/auth/slack/start',
   '/api/auth/slack/callback',
+  '/api/slack',
   '/_next',
   '/favicon.ico',
 ];
@@ -22,6 +25,38 @@ export async function middleware(request: NextRequest) {
     if (pathname.startsWith('/api/')) {
       return NextResponse.json(
         { error: 'Unauthorized' },
+        { status: 401 }
+      );
+    }
+    
+    return NextResponse.redirect(new URL('/login', request.url));
+  }
+
+  try {
+    const validateSessionService = container.resolve<ValidateSessionService>(
+      'ValidateSessionService'
+    );
+    
+    const result = await validateSessionService.execute(token);
+    
+    if (!result.valid) {
+      if (pathname.startsWith('/api/')) {
+        const response = NextResponse.json(
+          { error: 'Unauthorized' },
+          { status: 401 }
+        );
+        response.cookies.delete('subsaurus_session');
+        return response;
+      }
+      
+      const response = NextResponse.redirect(new URL('/login', request.url));
+      response.cookies.delete('subsaurus_session');
+      return response;
+    }
+  } catch (error) {
+    if (pathname.startsWith('/api/')) {
+      return NextResponse.json(
+        { error: 'Session validation failed' },
         { status: 401 }
       );
     }

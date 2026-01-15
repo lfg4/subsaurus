@@ -4,6 +4,7 @@ import type { GetAllSubscriptionsService } from '@/src/modules/subscription/appl
 import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
 import type { RenewalCycle } from '@/src/types/enums';
 import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
+import { standardRateLimit } from '@/app/lib/rate-limit';
 
 export async function GET(request: Request) {
   try {
@@ -24,6 +25,9 @@ export async function GET(request: Request) {
 }
 
 export async function POST(request: Request) {
+  const rateLimited = await standardRateLimit(request);
+  if (rateLimited) return rateLimited;
+
   try {
     const body = await request.json();
 
