@@ -3,9 +3,6 @@ import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepos
 import { Money } from '../domain/Money';
 import { RenewalCycle } from '@/src/types/enums';
 
-/**
- * DTO for updating a subscription
- */
 export interface UpdateSubscriptionDTO {
   name?: string;
   renewalCycle?: RenewalCycle;
@@ -15,10 +12,7 @@ export interface UpdateSubscriptionDTO {
   projects?: string[];
 }
 
-/**
- * Application Service: Update Subscription Use Case
- * Updates an existing subscription
- */
+
 export class UpdateSubscriptionService {
   constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 

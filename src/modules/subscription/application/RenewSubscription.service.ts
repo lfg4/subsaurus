@@ -21,7 +21,6 @@ export class RenewSubscriptionService {
 
     subscription.renew();
 
-    // Get configured days before renewal
     const daysBeforeRenewal = await this.settingsRepository.getDaysBeforeRenewal(subscription.slackWorkspaceId);
     const usageCheckSchedule = subscription.scheduleNextUsageCheck(daysBeforeRenewal);
 

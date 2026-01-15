@@ -30,12 +30,10 @@ export class ReSendUsageCheckService {
   ) {}
 
   async execute(params?: ReSendUsageCheckParams): Promise<ReSendUsageCheckResult> {
-    // Si se proporciona un checkId específico, procesar solo ese check
     if (params?.checkId) {
       return this.executeForSpecificCheck(params.checkId);
     }
 
-    // Si no, procesar todos los checks que necesitan reminder
     const daysBeforeEnd = params?.daysBeforeEnd ?? 3;
     return this.executeForMultipleChecks(daysBeforeEnd);
   }
