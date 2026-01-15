@@ -7,21 +7,28 @@ import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
 import { subscriptionsApi } from '@/app/lib/api';
+import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+
+import type { User } from '@/app/types';
 
 interface SubscriptionsListProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
   setCurrentPage: (page: PageType) => void;
   setSelectedSubscriptionId: (id: number) => void;
+  workspaceId: string;
+  currentUser: User;
 }
 
 export function SubscriptionsList({ 
   searchTerm, 
   setSearchTerm, 
   setCurrentPage, 
-  setSelectedSubscriptionId 
+  setSelectedSubscriptionId,
+  workspaceId,
+  currentUser
 }: SubscriptionsListProps) {
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
@@ -35,7 +42,7 @@ export function SubscriptionsList({
   const [showNewSubscription, setShowNewSubscription] = useState(false);
 
   useEffect(() => {
-    subscriptionsApi.getAll()
+    subscriptionsApi.getAll(workspaceId)
       .then(data => {
         setSubscriptions(data);
         setIsLoading(false);
@@ -44,7 +51,7 @@ export function SubscriptionsList({
         console.error('Error:', err);
         setIsLoading(false);
       });
-  }, []);
+  }, [workspaceId]);
 
   if (isLoading) {
     return (
@@ -57,10 +64,11 @@ export function SubscriptionsList({
 
   if (showNewSubscription) {
   return <NewSubscription 
+    currentUser={currentUser}
     setCurrentPage={() => { 
       setShowNewSubscription(false); 
       setCurrentPage('subscriptions');
-      subscriptionsApi.getAll()
+      subscriptionsApi.getAll(workspaceId)
         .then(data => setSubscriptions(data))
         .catch(err => console.error('Error:', err));
     }} 
@@ -111,14 +119,14 @@ export function SubscriptionsList({
     
     try {
       await subscriptionsApi.delete(deleteId);
-      const data = await subscriptionsApi.getAll();
+      const data = await subscriptionsApi.getAll(workspaceId);
       setSubscriptions(data);
       
       setShowDeleteModal(false);
       setDeleteId(null);
     } catch (err) {
       console.error('Error:', err);
-      alert('Error deleting subscription');
+      toast.error('Error deleting subscription');
     }
   };
 

@@ -110,13 +110,13 @@ export class Subscription extends Entity<number> {
     return this._renewalDate;
   }
 
-  scheduleNextUsageCheck(): UsageCheckSchedule {
+  scheduleNextUsageCheck(daysBeforeRenewal?: number): UsageCheckSchedule {
     const periodStart = RenewalCalculator.calculatePeriodStart(
       this._renewalDate,
       this.renewalCycle
     );
     const periodEnd = this._renewalDate;
-    const sendAt = RenewalCalculator.calculateUsageCheckDate(this._renewalDate);
+    const sendAt = RenewalCalculator.calculateUsageCheckDate(this._renewalDate, daysBeforeRenewal);
 
     return {
       periodStart,

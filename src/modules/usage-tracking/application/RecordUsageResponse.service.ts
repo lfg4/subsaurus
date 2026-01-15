@@ -1,5 +1,6 @@
 import type { UsageResponseRepository } from '../infrastructure/UsageResponseRepository';
 import { UsageResponseType } from '@/src/types/enums';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 
 export class RecordUsageResponseService {
@@ -27,7 +28,7 @@ export class RecordUsageResponseService {
 
     await this.usageResponseRepository.update(usageResponse);
 
-    console.log(`✅ User ${slackUserId} responded ${responseType} to usage check ${usageCheckId}`);
+    logger.info('User responded to usage check', { slackUserId, responseType, usageCheckId });
   }
 }
 

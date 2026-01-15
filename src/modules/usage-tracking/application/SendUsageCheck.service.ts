@@ -4,6 +4,7 @@ import type { SubscriptionRepository } from '@/src/modules/subscription/infrastr
 import type { SlackClient } from '@/src/modules/slack/infrastructure/SlackClient';
 import type { SlackMessageBuilder } from '@/src/modules/slack/infrastructure/SlackMessageBuilder';
 import { UsageResponse } from '../domain/UsageResponse';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 
 export interface SendUsageCheckResult {
@@ -27,7 +28,7 @@ export class SendUsageCheckService {
     try {
       const scheduledChecks = await this.usageCheckRepository.findScheduled();
 
-      console.log(`📋 Found ${scheduledChecks.length} usage checks to send`);
+      logger.info('Found usage checks to send', { count: scheduledChecks.length });
 
       for (const check of scheduledChecks) {
         try {
@@ -36,9 +37,10 @@ export class SendUsageCheckService {
           );
 
           if (!subscription) {
-            console.error(
-              `❌ Subscription ${check.subscriptionId} not found for usage check ${check.id}`
-            );
+            logger.error('Subscription not found for usage check', {
+              subscriptionId: check.subscriptionId,
+              checkId: check.id,
+            });
             failed++;
             continue;
           }
@@ -62,28 +64,37 @@ export class SendUsageCheckService {
 
               await this.usageResponseRepository.save(usageResponse);
 
-              console.log(`📤 Message sent and response tracked for user ${userId}`);
+              logger.debug('Message sent and response tracked', { userId });
             } catch (error) {
-              console.error(`❌ Failed to send to user ${userId}:`, error);
+              logger.error('Failed to send to user', {
+                userId,
+                error: error instanceof Error ? error.message : String(error),
+              });
             }
           }
 
           check.markAsSent();
           await this.usageCheckRepository.update(check);
 
-          console.log(
-            `✅ Usage check ${check.id} sent to ${subscription.slackUserIds.length} users`
-          );
+          logger.info('Usage check sent', {
+            checkId: check.id,
+            userCount: subscription.slackUserIds.length,
+          });
           sent++;
         } catch (error) {
-          console.error(`❌ Error processing usage check ${check.id}:`, error);
+          logger.error('Error processing usage check', {
+            checkId: check.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
           failed++;
         }
       }
 
       return { sent, failed };
     } catch (error) {
-      console.error('❌ Error in SendUsageCheckService:', error);
+      logger.error('Error in SendUsageCheckService', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }

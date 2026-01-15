@@ -31,8 +31,10 @@ export interface ApiResponse<T> {
 
 class SubscriptionsApi {
   
-  async getAll(): Promise<SubscriptionPrimitives[]> {
-    return apiClient.get<SubscriptionPrimitives[]>('/subscriptions');
+  async getAll(workspaceId?: string): Promise<SubscriptionPrimitives[]> {
+    return apiClient.get<SubscriptionPrimitives[]>('/subscriptions', {
+      params: workspaceId ? { workspaceId } : undefined,
+    });
   }
 
   

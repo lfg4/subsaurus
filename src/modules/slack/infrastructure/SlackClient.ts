@@ -1,3 +1,4 @@
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export class SlackClient {
   private slackToken: string;
@@ -5,7 +6,7 @@ export class SlackClient {
   constructor() {
     this.slackToken = process.env.SLACK_BOT_TOKEN || '';
     if (!this.slackToken) {
-      console.error('❌ SLACK_BOT_TOKEN not configured');
+      logger.error('SLACK_BOT_TOKEN not configured');
       throw new Error('Slack bot token not configured');
     }
   }
@@ -34,7 +35,7 @@ export class SlackClient {
       throw new Error(`Slack API error: ${result.error}`);
     }
 
-    console.log(`📤 Message sent to user ${userId}`);
+    logger.debug('Message sent to user', { userId });
   }
 
   async openModal(triggerId: string, modalView: any): Promise<void> {
@@ -53,7 +54,7 @@ export class SlackClient {
     const result = await response.json();
 
     if (!result.ok) {
-      console.error('❌ Error opening modal:', result.error);
+      logger.error('Error opening modal', { error: result.error });
       throw new Error(`Failed to open modal: ${result.error}`);
     }
   }

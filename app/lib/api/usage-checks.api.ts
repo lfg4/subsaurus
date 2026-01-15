@@ -15,9 +15,13 @@ export interface EnrichedUsageCheckDTO {
 
 class UsageChecksApi {
   
-  async getAll(subscriptionId?: number): Promise<EnrichedUsageCheckDTO[]> {
+  async getAll(subscriptionId?: number, workspaceId?: string): Promise<EnrichedUsageCheckDTO[]> {
+    const params: Record<string, string | number> = {};
+    if (subscriptionId) params.subscriptionId = subscriptionId;
+    if (workspaceId) params.workspaceId = workspaceId;
+    
     return apiClient.get<EnrichedUsageCheckDTO[]>('/usage-checks', {
-      params: subscriptionId ? { subscriptionId } : undefined,
+      params: Object.keys(params).length > 0 ? params : undefined,
     });
   }
 
@@ -27,6 +31,10 @@ class UsageChecksApi {
 
   async getResponses(usageCheckId: number): Promise<UsageResponsePrimitives[]> {
     return apiClient.get<UsageResponsePrimitives[]>(`/usage-checks/${usageCheckId}/responses`);
+  }
+
+  async resend(usageCheckId: number): Promise<{ success: boolean; sent: number; failed: number; total?: number; message?: string }> {
+    return apiClient.post<{ success: boolean; sent: number; failed: number; total?: number; message?: string }>(`/usage-checks/${usageCheckId}/resend`);
   }
 }
 

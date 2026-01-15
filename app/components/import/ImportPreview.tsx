@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import {  TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import type { SubscriptionPreview } from '@/app/lib/api';
+import { toast } from 'sonner';
 
 interface ImportPreviewProps {
   subscriptions: SubscriptionPreview[];
@@ -55,7 +56,7 @@ export function ImportPreview({
 
   const handleConfirm = () => {
     if (selectedNames.size === 0) {
-      alert('Select at least one subscription to import');
+      toast.warning('Select at least one subscription to import');
       return;
     }
     onConfirm(Array.from(selectedNames));

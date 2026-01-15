@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Calendar, DollarSign, FileText, Coins } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Column {
   name: string;
@@ -56,7 +57,7 @@ export function ColumnMapper({ columns, previewRows, onMappingComplete }: Column
 
   const handleSubmit = (manualMode: boolean = false) => {
     if (!dateColumn || !descriptionColumn || !amountColumn) {
-      alert('Please select at least Date, Description and Amount columns');
+      toast.warning('Please select at least Date, Description and Amount columns');
       return;
     }
 

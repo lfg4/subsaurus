@@ -5,6 +5,7 @@ import type { CreateSubscriptionService } from '@/src/modules/subscription/appli
 import type { RecordUsageResponseService } from '@/src/modules/usage-tracking/application/RecordUsageResponse.service';
 import { UsageResponseType, RenewalCycle } from '@/src/types/enums';
 import type { SlackSubscriptionData } from '@/src/types/slack';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 enum SlackCommands {
   HELP = 'help',
@@ -86,7 +87,9 @@ export class SlackCommandHandler {
 
       return NextResponse.json({ ok: true });
     } catch (error) {
-      console.error('❌ Error handling block actions:', error);
+      logger.error('Error handling block actions', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return NextResponse.json({ ok: true });
     }
   }
@@ -117,7 +120,10 @@ export class SlackCommandHandler {
 
       return NextResponse.json({ response_action: 'clear' });
     } catch (error) {
-      console.error('❌ Error handling usage response:', error);
+      logger.error('Error handling usage response', {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       return NextResponse.json({
         replace_original: true,
         text: '❌ There was an error processing your response.',
@@ -169,7 +175,9 @@ export class SlackCommandHandler {
         view: this.slackMessageBuilder.buildSuccessModal(subscription),
       });
     } catch (error) {
-      console.error('❌ Error in handleModalSubmission:', error);
+      logger.error('Error in handleModalSubmission', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       return NextResponse.json({
         response_action: 'errors',
         errors: {

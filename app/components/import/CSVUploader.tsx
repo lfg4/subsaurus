@@ -2,6 +2,7 @@
 
 import { useState, useRef } from 'react';
 import { Upload, FileSpreadsheet, X } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface CSVUploaderProps {
   onFileSelected: (file: File) => void;
@@ -44,7 +45,7 @@ export function CSVUploader({ onFileSelected, disabled }: CSVUploaderProps) {
     const extension = file.name.split('.').pop()?.toLowerCase();
     
     if (extension !== 'csv' && extension !== 'xlsx' && extension !== 'xls') {
-      alert('Please select a CSV or Excel file (.xlsx, .xls)');
+      toast.warning('Please select a CSV or Excel file (.xlsx, .xls)');
       return;
     }
 

@@ -12,7 +12,7 @@ export const resendUsageChecks = schedules.task({
     try {
       const service = getReSendUsageCheckService();
 
-      const result = await service.execute(3);
+      const result = await service.execute({ daysBeforeEnd: 3 });
 
       console.log('✅ Usage check reminders sent successfully', {
         sent: result.sent,

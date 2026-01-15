@@ -44,9 +44,6 @@ export class SubscriptionRepository {
     });
   }
 
-  /**
-   * Update specific fields of a subscription
-   */
   async updateFields(id: number, data: any): Promise<void> {
     await prisma.subscription.update({
       where: { id },
@@ -61,9 +58,6 @@ export class SubscriptionRepository {
     });
   }
 
-  /**
-   * Delete a subscription
-   */
   async delete(id: number): Promise<void> {
     await prisma.subscription.delete({
       where: { id },
@@ -83,11 +77,9 @@ export class SubscriptionRepository {
     return this.toDomain(subscriptionData);
   }
 
-  /**
-   * Find all subscriptions
-   */
-  async findAll(): Promise<Subscription[]> {
+  async findAll(slackWorkspaceId?: string): Promise<Subscription[]> {
     const subscriptions = await prisma.subscription.findMany({
+      where: slackWorkspaceId ? { slackWorkspaceId } : undefined,
       include: {
         subscriptionUsers: true,
       },
@@ -97,9 +89,6 @@ export class SubscriptionRepository {
     return subscriptions.map(s => this.toDomain(s));
   }
 
-  /**
-   * Find subscriptions renewing tomorrow
-   */
   async findRenewingTomorrow(): Promise<Subscription[]> {
     const now = new Date();
     const tomorrow = new Date(Date.UTC(

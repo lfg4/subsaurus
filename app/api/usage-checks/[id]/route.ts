@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { GetUsageCheckByIdService } from '@/src/modules/usage-tracking/application/GetUsageCheckById.service';
+import { handleApiError, createValidationError, createNotFoundError } from '@/app/lib/api-error-handler';
 
 export async function GET(
   _request: Request,
@@ -11,10 +12,7 @@ export async function GET(
     const id = parseInt(idStr);
 
     if (Number.isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid ID');
     }
 
     const getUsageCheckByIdService = container.resolve<GetUsageCheckByIdService>(
@@ -24,18 +22,11 @@ export async function GET(
     const usageCheck = await getUsageCheckByIdService.execute(id);
 
     if (!usageCheck) {
-      return NextResponse.json(
-        { error: 'Usage check not found' },
-        { status: 404 }
-      );
+      return createNotFoundError('Usage check');
     }
 
     return NextResponse.json(usageCheck.toPrimitives());
   } catch (error) {
-    console.error('Error fetching usage check:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch usage check' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch usage check', 'Failed to fetch usage check');
   }
 }

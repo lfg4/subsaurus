@@ -1,5 +1,8 @@
 import { Entity } from '@/src/shared/domain/Entity';
 
+export type UserRole = 'admin' | 'user';
+
+const VALID_ROLES: readonly UserRole[] = ['admin', 'user'] as const;
 
 export class SlackUser extends Entity<number> {
   private constructor(
@@ -9,9 +12,46 @@ export class SlackUser extends Entity<number> {
     public readonly displayName: string | null,
     public readonly email: string | null,
     public readonly avatarUrl: string | null,
+    public readonly role: UserRole,
+    public readonly isActive: boolean,
     public readonly createdAt: Date
   ) {
     super(id);
+    this.validateRole(role);
+    this.validateSlackUserId(slackUserId);
+    this.validateSlackWorkspaceId(slackWorkspaceId);
+  }
+
+  private validateRole(role: string): void {
+    if (!VALID_ROLES.includes(role as UserRole)) {
+      throw new Error(`Invalid user role: ${role}. Must be one of: ${VALID_ROLES.join(', ')}`);
+    }
+  }
+
+  private validateSlackUserId(slackUserId: string): void {
+    if (!slackUserId || slackUserId.trim().length === 0) {
+      throw new Error('Slack User ID cannot be empty');
+    }
+  }
+
+  private validateSlackWorkspaceId(workspaceId: string): void {
+    if (!workspaceId || workspaceId.trim().length === 0) {
+      throw new Error('Slack Workspace ID cannot be empty');
+    }
+  }
+
+  
+  isAdmin(): boolean {
+    return this.role === 'admin';
+  }
+
+  
+  canLogin(): boolean {
+    return this.isActive && this.isAdmin();
+  }
+
+  isUserActive(): boolean {
+    return this.isActive;
   }
 
   static create(data: {
@@ -21,6 +61,8 @@ export class SlackUser extends Entity<number> {
     displayName: string | null;
     email: string | null;
     avatarUrl: string | null;
+    role?: UserRole;
+    isActive?: boolean;
   }): SlackUser {
     return new SlackUser(
       data.id || 0,
@@ -29,6 +71,8 @@ export class SlackUser extends Entity<number> {
       data.displayName,
       data.email,
       data.avatarUrl,
+      data.role || 'user',
+      data.isActive ?? true,
       new Date()
     );
   }
@@ -40,6 +84,8 @@ export class SlackUser extends Entity<number> {
     displayName: string | null;
     email: string | null;
     avatarUrl: string | null;
+    role: string;
+    isActive: boolean;
     createdAt: Date;
   }): SlackUser {
     return new SlackUser(
@@ -49,6 +95,8 @@ export class SlackUser extends Entity<number> {
       data.displayName,
       data.email,
       data.avatarUrl,
+      data.role as UserRole,
+      data.isActive,
       data.createdAt
     );
   }
@@ -60,6 +108,8 @@ export class SlackUser extends Entity<number> {
     displayName: string | null;
     email: string | null;
     avatarUrl: string | null;
+    role: UserRole;
+    isActive: boolean;
     createdAt: Date;
   } {
     return {
@@ -69,6 +119,8 @@ export class SlackUser extends Entity<number> {
       displayName: this.displayName,
       email: this.email,
       avatarUrl: this.avatarUrl,
+      role: this.role,
+      isActive: this.isActive,
       createdAt: this.createdAt,
     };
   }

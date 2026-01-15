@@ -1,6 +1,7 @@
 import type { SlackUserRepository } from '../infrastructure/SlackUserRepository';
 import type { SlackClient } from '../infrastructure/SlackClient';
 import { SlackUser } from '../domain/SlackUser';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 interface SlackApiUser {
   id: string;
@@ -21,7 +22,7 @@ export class SyncSlackUsersService {
   constructor(private readonly slackUserRepository: SlackUserRepository) {
     this.slackToken = process.env.SLACK_BOT_TOKEN || '';
     if (!this.slackToken) {
-      console.error('❌ SLACK_BOT_TOKEN not configured');
+      logger.error('SLACK_BOT_TOKEN not configured');
       throw new Error('Slack bot token not configured');
     }
   }
@@ -40,7 +41,7 @@ export class SyncSlackUsersService {
       const result = await response.json();
 
       if (!result.ok) {
-        console.error('❌ Error getting slack users:', result.error);
+        logger.error('Error getting slack users from API', { error: result.error });
         throw new Error(`Slack API error: ${result.error}`);
       }
 
@@ -75,9 +76,16 @@ export class SyncSlackUsersService {
         await this.slackUserRepository.delete(user.id);
       }
 
-      console.log(`✅ Synced ${newUsers.length} new users, removed ${deletedUsers.length} users`);
+      logger.info('Slack users synced', {
+        newUsersCount: newUsers.length,
+        deletedUsersCount: deletedUsers.length,
+        workspaceId,
+      });
     } catch (error) {
-      console.error('❌ Error syncing slack users:', JSON.stringify(error));
+      logger.error('Error syncing slack users', {
+        workspaceId,
+        error: error instanceof Error ? error.message : JSON.stringify(error),
+      });
       throw error;
     }
   }

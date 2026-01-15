@@ -3,6 +3,7 @@ export { apiClient, ApiError } from './client';
 export { subscriptionsApi } from './subscriptions.api';
 export { usageChecksApi } from './usage-checks.api';
 export { importApi } from './import.api';
+export { settingsApi } from './settings.api';
 
 export type {
   CreateSubscriptionDTO,
