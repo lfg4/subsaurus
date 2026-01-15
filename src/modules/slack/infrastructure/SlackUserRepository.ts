@@ -1,18 +1,6 @@
 import { prisma } from '@/src/lib/prisma';
 import { SlackUser } from '../domain/SlackUser';
 
-export interface SlackUserWithAuth {
-  id: number;
-  slackUserId: string;
-  slackWorkspaceId: string;
-  displayName: string | null;
-  email: string | null;
-  avatarUrl: string | null;
-  role: string;
-  isActive: boolean;
-  createdAt: Date;
-}
-
 export class SlackUserRepository {
   async save(slackUser: SlackUser): Promise<void> {
     const primitives = slackUser.toPrimitives();
@@ -59,12 +47,24 @@ export class SlackUserRepository {
     });
   }
 
-  async findBySlackUserId(slackUserId: string): Promise<SlackUserWithAuth | null> {
+  async findBySlackUserId(slackUserId: string): Promise<SlackUser | null> {
     const user = await prisma.slackUser.findUnique({
       where: { slackUserId },
     });
 
-    return user;
+    if (!user) return null;
+
+    return SlackUser.fromPrimitives({
+      id: user.id,
+      slackUserId: user.slackUserId,
+      slackWorkspaceId: user.slackWorkspaceId,
+      displayName: user.displayName,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    });
   }
 
   async findByWorkspaceId(workspaceId: string): Promise<SlackUser[]> {
@@ -77,7 +77,7 @@ export class SlackUserRepository {
     return users.map(u => this.toDomain(u));
   }
 
-  async findAdminsByWorkspaceId(workspaceId: string): Promise<SlackUserWithAuth[]> {
+  async findAdminsByWorkspaceId(workspaceId: string): Promise<SlackUser[]> {
     const users = await prisma.slackUser.findMany({
       where: {
         slackWorkspaceId: workspaceId,
@@ -86,7 +86,17 @@ export class SlackUserRepository {
       },
     });
 
-    return users as SlackUserWithAuth[];
+    return users.map(user => SlackUser.fromPrimitives({
+      id: user.id,
+      slackUserId: user.slackUserId,
+      slackWorkspaceId: user.slackWorkspaceId,
+      displayName: user.displayName,
+      email: user.email,
+      avatarUrl: user.avatarUrl,
+      role: user.role,
+      isActive: user.isActive,
+      createdAt: user.createdAt,
+    }));
   }
 
   async delete(id: number): Promise<void> {
@@ -111,7 +121,7 @@ export class SlackUserRepository {
     });
   }
 
-  private toDomain(data: any): SlackUser {
+  private toDomain(data: { id: number; slackUserId: string; slackWorkspaceId: string; displayName: string | null; email: string | null; avatarUrl: string | null; role: string; isActive: boolean; createdAt: Date; }): SlackUser {
     return SlackUser.fromPrimitives({
       id: data.id,
       slackUserId: data.slackUserId,
@@ -119,6 +129,8 @@ export class SlackUserRepository {
       displayName: data.displayName,
       email: data.email,
       avatarUrl: data.avatarUrl,
+      role: data.role,
+      isActive: data.isActive,
       createdAt: data.createdAt,
     });
   }

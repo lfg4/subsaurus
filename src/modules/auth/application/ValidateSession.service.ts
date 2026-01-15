@@ -1,9 +1,18 @@
 import type { SessionRepository } from '../infrastructure/SessionRepository';
-import type { SlackUserRepository, SlackUserWithAuth } from '@/src/modules/slack/infrastructure/SlackUserRepository';
+import type { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
+import type { SlackUser } from '@/src/modules/slack/domain/SlackUser';
 
-export interface ValidateSessionResult {
+export interface ValidateSessionResultDTO {
   valid: boolean;
-  user?: SlackUserWithAuth;
+  user?: {
+    id: string;
+    slackUserId: string;
+    slackWorkspaceId: string;
+    displayName: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+    role: string;
+  };
   error?: string;
 }
 
@@ -13,7 +22,7 @@ export class ValidateSessionService {
     private readonly slackUserRepository: SlackUserRepository
   ) {}
 
-  async execute(token: string): Promise<ValidateSessionResult> {
+  async execute(token: string): Promise<ValidateSessionResultDTO> {
     try {
       const session = await this.sessionRepository.findByToken(token);
 
@@ -34,25 +43,25 @@ export class ValidateSessionService {
         };
       }
 
-      if (!user.isActive) {
+      if (!user.canLogin()) {
         await this.sessionRepository.delete(session.id);
+        
+        if (!user.isUserActive()) {
+          return {
+            valid: false,
+            error: 'User account is disabled',
+          };
+        }
+        
         return {
           valid: false,
-          error: 'User account is disabled',
-        };
-      }
-
-      if (user.role !== 'admin') {
-        await this.sessionRepository.delete(session.id);
-        return {
-          valid: false,
-          error: 'User is not an admin',
+          error: 'User is no longer an admin',
         };
       }
 
       return {
         valid: true,
-        user,
+        user: this.toUserDTO(user),
       };
     } catch (error) {
       console.error('❌ Session validation error:', error);
@@ -62,5 +71,17 @@ export class ValidateSessionService {
       };
     }
   }
-}
 
+  private toUserDTO(user: SlackUser) {
+    const primitives = user.toPrimitives();
+    return {
+      id: primitives.id.toString(),
+      slackUserId: primitives.slackUserId,
+      slackWorkspaceId: primitives.slackWorkspaceId,
+      displayName: primitives.displayName,
+      email: primitives.email,
+      avatarUrl: primitives.avatarUrl,
+      role: primitives.role,
+    };
+  }
+}

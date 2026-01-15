@@ -1,42 +1,35 @@
 import { prisma } from '@/src/lib/prisma';
 import { randomBytes } from 'crypto';
-
-export interface SessionPrimitives {
-  id: string;
-  slackUserId: string;
-  slackWorkspaceId: string;
-  token: string;
-  expiresAt: Date;
-  createdAt: Date;
-}
+import { Session } from '../domain/Session';
 
 export class SessionRepository {
-  async create(slackUserId: string, slackWorkspaceId: string, expiresInDays: number = 7): Promise<SessionPrimitives> {
+  async create(slackUserId: string, slackWorkspaceId: string, expiresInDays: number = 7): Promise<Session> {
     const token = this.generateToken();
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    const id = randomBytes(16).toString('hex');
 
-    const session = await prisma.session.create({
+    const sessionData = await prisma.session.create({
       data: {
+        id,
         slackUserId,
         slackWorkspaceId,
         token,
-        expiresAt,
+        expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
       },
     });
 
-    return session;
+    return Session.fromPrimitives(sessionData);
   }
 
-  async findByToken(token: string): Promise<SessionPrimitives | null> {
-    const session = await prisma.session.findUnique({
+  async findByToken(token: string): Promise<Session | null> {
+    const sessionData = await prisma.session.findUnique({
       where: { token },
     });
 
-    if (!session) return null;
+    if (!sessionData) return null;
 
-    // Check if expired
-    if (session.expiresAt < new Date()) {
+    const session = Session.fromPrimitives(sessionData);
+
+    if (session.isExpired()) {
       await this.delete(session.id);
       return null;
     }

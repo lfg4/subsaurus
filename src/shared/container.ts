@@ -30,15 +30,17 @@ import { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUse
 import { SlackCommandHandler } from '@/src/modules/slack/application/SlackCommandHandler';
 import { SyncSlackUsersService } from '@/src/modules/slack/application/SyncSlackUsers.service';
 
+import { SlackOAuthClient } from '@/src/modules/auth/infrastructure/SlackOAuthClient';
 import { AuthenticateUserService } from '@/src/modules/auth/application/AuthenticateUser.service';
 import { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
+import { ProcessRenewalNotificationsService } from '@/src/modules/subscription/application/ProcessRenewalNotifications.service';
 
 /**
  * Simple Dependency Injection Container
  * Manages singletons for the application
  */
 class Container {
-  private instances = new Map<string, any>();
+  private instances = new Map<string, unknown>();
 
   /**
    * Register a factory function
@@ -99,6 +101,7 @@ container.register('SessionRepository', () => new SessionRepository());
 container.register('SlackClient', () => new SlackClient());
 container.register('SlackMessageBuilder', () => new SlackMessageBuilder());
 container.register('SlackUserRepository', () => new SlackUserRepository());
+container.register('SlackOAuthClient', () => SlackOAuthClient.fromEnvironment());
 
 
 container.register(
@@ -234,7 +237,8 @@ container.register(
     new AuthenticateUserService(
       container.resolve('SessionRepository'),
       container.resolve('SlackUserRepository'),
-      container.resolve('SettingsRepository')
+      container.resolve('SettingsRepository'),
+      container.resolve('SlackOAuthClient')
     )
 );
 
@@ -244,6 +248,16 @@ container.register(
     new ValidateSessionService(
       container.resolve('SessionRepository'),
       container.resolve('SlackUserRepository')
+    )
+);
+
+container.register(
+  'ProcessRenewalNotificationsService',
+  () =>
+    new ProcessRenewalNotificationsService(
+      container.resolve('SettingsRepository'),
+      container.resolve('SlackUserRepository'),
+      container.resolve('SendRenewalNotificationService')
     )
 );
 
@@ -298,4 +312,6 @@ export const getSettingsRepository = () =>
   container.resolve<SettingsRepository>('SettingsRepository');
 export const getSlackUserRepository = () =>
   container.resolve<SlackUserRepository>('SlackUserRepository');
+export const getProcessRenewalNotificationsService = () =>
+  container.resolve<ProcessRenewalNotificationsService>('ProcessRenewalNotificationsService');
 

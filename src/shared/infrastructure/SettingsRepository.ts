@@ -1,23 +1,18 @@
 import { prisma } from '@/src/lib/prisma';
-
-export interface AppSettingsPrimitives {
-  id: number;
-  slackWorkspaceId: string;
-  daysBeforeRenewal: number;
-  isActive: boolean;
-  updatedAt: Date;
-}
+import { AppSettings } from '../domain/AppSettings';
 
 export class SettingsRepository {
-  async findByWorkspace(slackWorkspaceId: string): Promise<AppSettingsPrimitives | null> {
+  async findByWorkspace(slackWorkspaceId: string): Promise<AppSettings | null> {
     const settings = await prisma.appSettings.findUnique({
       where: { slackWorkspaceId },
     });
 
-    return settings;
+    if (!settings) return null;
+
+    return AppSettings.fromPrimitives(settings);
   }
 
-  async upsert(slackWorkspaceId: string, daysBeforeRenewal: number): Promise<AppSettingsPrimitives> {
+  async upsert(slackWorkspaceId: string, daysBeforeRenewal: number): Promise<AppSettings> {
     const settings = await prisma.appSettings.upsert({
       where: { slackWorkspaceId },
       update: { daysBeforeRenewal },
@@ -28,7 +23,7 @@ export class SettingsRepository {
       },
     });
 
-    return settings;
+    return AppSettings.fromPrimitives(settings);
   }
 
   async getDaysBeforeRenewal(slackWorkspaceId: string): Promise<number> {

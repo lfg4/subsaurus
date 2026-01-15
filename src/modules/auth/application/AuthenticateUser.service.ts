@@ -1,43 +1,21 @@
 import type { SessionRepository } from '../infrastructure/SessionRepository';
-import type { SlackUserRepository, SlackUserWithAuth } from '@/src/modules/slack/infrastructure/SlackUserRepository';
+import type { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
 import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import type { SlackOAuthPort } from '../domain/ports/SlackOAuthPort';
+import type { SlackUser } from '@/src/modules/slack/domain/SlackUser';
 
-export interface SlackOAuthResponse {
-  ok: boolean;
-  access_token?: string;
-  team?: {
-    id: string;
-    name: string;
-  };
-  authed_user?: {
-    id: string;
-    access_token?: string;
-    scope?: string;
-    token_type?: string;
-  };
-  error?: string;
-}
-
-export interface SlackOpenIDUserInfo {
-  ok: boolean;
-  sub?: string; // user ID
-  'https://slack.com/team_id'?: string;
-  'https://slack.com/user_id'?: string;
-  email?: string;
-  email_verified?: boolean;
-  name?: string;
-  picture?: string;
-  given_name?: string;
-  family_name?: string;
-  locale?: string;
-  'https://slack.com/team_name'?: string;
-  error?: string;
-}
-
-export interface AuthResult {
+export interface AuthResultDTO {
   success: boolean;
   sessionToken?: string;
-  user?: SlackUserWithAuth;
+  user?: {
+    id: string;
+    slackUserId: string;
+    slackWorkspaceId: string;
+    displayName: string | null;
+    email: string | null;
+    avatarUrl: string | null;
+    role: string;
+  };
   error?: string;
   message?: string;
 }
@@ -46,12 +24,13 @@ export class AuthenticateUserService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly slackUserRepository: SlackUserRepository,
-    private readonly settingsRepository: SettingsRepository
+    private readonly settingsRepository: SettingsRepository,
+    private readonly slackOAuthClient: SlackOAuthPort
   ) {}
 
-  async execute(code: string): Promise<AuthResult> {
+  async execute(code: string): Promise<AuthResultDTO> {
     try {
-      const oauthResponse = await this.exchangeCodeForToken(code);
+      const oauthResponse = await this.slackOAuthClient.exchangeCodeForToken(code);
       
       if (!oauthResponse.ok || !oauthResponse.authed_user?.access_token) {
         return {
@@ -61,9 +40,9 @@ export class AuthenticateUserService {
         };
       }
 
-      const userInfo = await this.getUserInfo(oauthResponse.authed_user.access_token);
+      const userInfo = await this.slackOAuthClient.getUserInfo(oauthResponse.authed_user.access_token);
       
-      if (!userInfo.ok || !userInfo['https://slack.com/user_id'] || !userInfo['https://slack.com/team_id']) {
+      if (!userInfo.ok || !userInfo.userId || !userInfo.teamId) {
         return {
           success: false,
           error: 'user_info_failed',
@@ -71,8 +50,8 @@ export class AuthenticateUserService {
         };
       }
 
-      const slackUserId = userInfo['https://slack.com/user_id'];
-      const workspaceId = userInfo['https://slack.com/team_id'];
+      const slackUserId = userInfo.userId;
+      const workspaceId = userInfo.teamId;
 
       const workspace = await this.settingsRepository.findByWorkspace(workspaceId);
       
@@ -84,7 +63,7 @@ export class AuthenticateUserService {
         };
       }
 
-      if (!workspace.isActive) {
+      if (!workspace.isWorkspaceActive()) {
         return {
           success: false,
           error: 'workspace_inactive',
@@ -102,15 +81,15 @@ export class AuthenticateUserService {
         };
       }
 
-      if (!user.isActive) {
-        return {
-          success: false,
-          error: 'user_inactive',
-          message: 'Your account has been disabled. Contact support.',
-        };
-      }
-
-      if (user.role !== 'admin') {
+      if (!user.canLogin()) {
+        if (!user.isUserActive()) {
+          return {
+            success: false,
+            error: 'user_inactive',
+            message: 'Your account has been disabled. Contact support.',
+          };
+        }
+        
         return {
           success: false,
           error: 'admin_required',
@@ -127,7 +106,7 @@ export class AuthenticateUserService {
       return {
         success: true,
         sessionToken: session.token,
-        user,
+        user: this.toUserDTO(user),
       };
     } catch (error) {
       console.error('❌ Authentication error:', error);
@@ -139,40 +118,17 @@ export class AuthenticateUserService {
     }
   }
 
-  private async exchangeCodeForToken(code: string): Promise<SlackOAuthResponse> {
-    const clientId = process.env.SLACK_CLIENT_ID;
-    const clientSecret = process.env.SLACK_CLIENT_SECRET;
-    const redirectUri = process.env.SLACK_REDIRECT_URI;
-
-    if (!clientId || !clientSecret || !redirectUri) {
-      throw new Error('Missing Slack OAuth configuration');
-    }
-
-    const response = await fetch('https://slack.com/api/oauth.v2.access', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-      },
-      body: new URLSearchParams({
-        client_id: clientId,
-        client_secret: clientSecret,
-        code,
-        redirect_uri: redirectUri,
-      }),
-    });
-
-    return response.json();
-  }
-
-  private async getUserInfo(accessToken: string): Promise<SlackOpenIDUserInfo> {
-    const response = await fetch('https://slack.com/api/openid.connect.userInfo', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${accessToken}`,
-      },
-    });
-
-    return response.json();
+  private toUserDTO(user: SlackUser) {
+    const primitives = user.toPrimitives();
+    return {
+      id: primitives.id.toString(),
+      slackUserId: primitives.slackUserId,
+      slackWorkspaceId: primitives.slackWorkspaceId,
+      displayName: primitives.displayName,
+      email: primitives.email,
+      avatarUrl: primitives.avatarUrl,
+      role: primitives.role,
+    };
   }
 }
 
