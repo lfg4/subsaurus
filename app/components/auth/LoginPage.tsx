@@ -1,9 +1,36 @@
 'use client';
 
+import { useEffect, useState } from 'react';
+
 export function LoginPage() {
+  const [isChecking, setIsChecking] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/auth/session')
+      .then(res => res.json())
+      .then(data => {
+        if (data.valid) {
+          window.location.href = '/';
+        } else {
+          setIsChecking(false);
+        }
+      })
+      .catch(() => {
+        setIsChecking(false);
+      });
+  }, []);
+
   const handleSlackLogin = () => {
     window.location.href = '/api/auth/slack/start';
   };
+
+  if (isChecking) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center">
+        <div className="text-8xl animate-bounce">🦖</div>
+      </div>
+    );
+  }
 
   const errorMessages: Record<string, string> = {
     access_denied: 'You denied access to Subsaurus',
