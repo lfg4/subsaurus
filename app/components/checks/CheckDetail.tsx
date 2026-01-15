@@ -3,6 +3,8 @@
 import { ChevronRight, Clock } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
 import { useState, useEffect } from 'react';
+import { usageChecksApi } from '@/app/lib/api';
+import { UsageCheckStatus, UsageResponseType } from '@/src/types/enums';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -20,8 +22,8 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
  useEffect(() => {
     console.log('Fetching data for checkId:', checkId);
     Promise.all([
-      fetch(`/api/usage-checks/${checkId}`).then(res => res.json()),
-      fetch(`/api/usage-checks/${checkId}/responses`).then(res => res.json())
+      usageChecksApi.getById(checkId),
+      usageChecksApi.getResponses(checkId)
     ])
       .then(([checkData, responsesData]) => {
         console.log('Check data received:', checkData);
@@ -67,7 +69,7 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
             Check from {formatDate(check.periodStart)} to {formatDate(check.periodEnd)}
           </p>
         </div>
-        {check.status === 'SENT' && (
+        {check.status === UsageCheckStatus.SENT && (
           <button type="button" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2">
             <Clock className="w-5 h-5" />
             Send reminder
@@ -78,19 +80,19 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
       <div className="grid grid-cols-4 gap-4 mb-8">
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-2xl font-bold text-green-600">
-            {responses.filter(r => r.response === 'YES').length}
+            {responses.filter(r => r.response === UsageResponseType.YES).length}
           </div>
           <div className="text-sm text-gray-600">Yes, uses it</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-2xl font-bold text-yellow-600">
-            {responses.filter(r => r.response === 'LITTLE').length}
+            {responses.filter(r => r.response === UsageResponseType.LITTLE).length}
           </div>
           <div className="text-sm text-gray-600">Uses little</div>
         </div>
         <div className="bg-white rounded-xl border border-gray-200 p-4">
           <div className="text-2xl font-bold text-red-600">
-            {responses.filter(r => r.response === 'NO').length}
+            {responses.filter(r => r.response === UsageResponseType.NO).length}
           </div>
           <div className="text-sm text-gray-600">Does not use</div>
         </div>
@@ -125,14 +127,14 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
                   <div className="text-sm text-gray-500">{formatDate(resp.respondedAt)}</div>
                 )}
                 <span className={`px-3 py-1 text-sm font-medium rounded-full ${
-                  resp.response === 'YES' ? 'bg-green-50 text-green-700' :
-                  resp.response === 'LITTLE' ? 'bg-yellow-50 text-yellow-700' :
-                  resp.response === 'NO' ? 'bg-red-50 text-red-700' :
+                  resp.response === UsageResponseType.YES ? 'bg-green-50 text-green-700' :
+                  resp.response === UsageResponseType.LITTLE ? 'bg-yellow-50 text-yellow-700' :
+                  resp.response === UsageResponseType.NO ? 'bg-red-50 text-red-700' :
                   'bg-gray-100 text-gray-600'
                 }`}>
-                  {resp.response === 'YES' ? 'Yes, uses it' : 
-                   resp.response === 'LITTLE' ? 'Uses little' : 
-                   resp.response === 'NO' ? 'Does not use' : 
+                  {resp.response === UsageResponseType.YES ? 'Yes, uses it' : 
+                   resp.response === UsageResponseType.LITTLE ? 'Uses little' : 
+                   resp.response === UsageResponseType.NO ? 'Does not use' : 
                    'Not responded'}
                 </span>
               </div>

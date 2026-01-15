@@ -6,6 +6,7 @@ import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
+import { subscriptionsApi } from '@/app/lib/api';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -34,8 +35,7 @@ export function SubscriptionsList({
   const [showNewSubscription, setShowNewSubscription] = useState(false);
 
   useEffect(() => {
-    fetch('/api/subscriptions')
-      .then(res => res.json())
+    subscriptionsApi.getAll()
       .then(data => {
         setSubscriptions(data);
         setIsLoading(false);
@@ -60,8 +60,7 @@ export function SubscriptionsList({
     setCurrentPage={() => { 
       setShowNewSubscription(false); 
       setCurrentPage('subscriptions');
-      fetch('/api/subscriptions')
-        .then(res => res.json())
+      subscriptionsApi.getAll()
         .then(data => setSubscriptions(data))
         .catch(err => console.error('Error:', err));
     }} 
@@ -111,14 +110,8 @@ export function SubscriptionsList({
     if (!deleteId) return;
     
     try {
-      const response = await fetch(`/api/subscriptions/${deleteId}`, {
-        method: 'DELETE',
-      });
-
-      if (!response.ok) throw new Error('Error deleting');
-
-      const res = await fetch('/api/subscriptions');
-      const data = await res.json();
+      await subscriptionsApi.delete(deleteId);
+      const data = await subscriptionsApi.getAll();
       setSubscriptions(data);
       
       setShowDeleteModal(false);

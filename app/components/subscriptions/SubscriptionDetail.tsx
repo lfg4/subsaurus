@@ -4,8 +4,12 @@ import { useState, useEffect } from 'react';
 import { ChevronRight, Plus, X } from 'lucide-react';
 import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
+import { subscriptionsApi } from '@/app/lib/api';
+import { RenewalCycle } from '@/src/types/enums';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+
+import { UsageCheckStatus } from '@/src/types/enums';
 
 const mockUsageChecks = [
   {
@@ -15,7 +19,7 @@ const mockUsageChecks = [
     periodStart: '2025-12-20',
     periodEnd: '2026-01-20',
     sendAt: '2026-01-15T10:00:00Z',
-    status: 'SENT',
+    status: UsageCheckStatus.SENT,
     responsesCount: 5
   },
   {
@@ -25,7 +29,7 @@ const mockUsageChecks = [
     periodStart: '2025-12-15',
     periodEnd: '2026-01-15',
     sendAt: '2026-01-10T10:00:00Z',
-    status: 'SENT',
+    status: UsageCheckStatus.SENT,
     responsesCount: 10
   }
 ];
@@ -41,7 +45,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
   const [formData, setFormData] = useState({
     name: '',
     project: '',
-    renewalCycle: 'MONTHLY' as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
+    renewalCycle: RenewalCycle.MONTHLY,
     renewalDate: '',
     costAmount: 0,
     costCurrency: 'EUR'
@@ -49,8 +53,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
   const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
-    fetch(`/api/subscriptions/${subscriptionId}`)
-      .then(res => res.json())
+    subscriptionsApi.getById(subscriptionId)
       .then(data => {
         setSubscription(data);
         setFormData({
@@ -72,13 +75,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
   const handleSave = async () => {
     setIsSaving(true);
     try {
-      const response = await fetch(`/api/subscriptions/${subscriptionId}`, {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(formData)
-      });
-
-      if (!response.ok) throw new Error('Error saving');
+      await subscriptionsApi.update(subscriptionId, formData);
 
       alert('✅ Changes saved successfully');
       setCurrentPage('subscriptions');
@@ -139,8 +136,9 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         </h2>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Name</label>
-            <input 
+            <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">Name</label>
+            <input
+              id={`name-${subscription.id}`}
               type="text" 
               value={formData.name}
               onChange={(e) => setFormData({...formData, name: e.target.value})}
@@ -148,8 +146,9 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Project</label>
+            <label htmlFor={`project-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Project</label>
             <input 
+              id={`project-${subscription.id}`}
               type="text" 
               value={formData.project}
               onChange={(e) => setFormData({...formData, project: e.target.value})}
@@ -157,20 +156,22 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
+            <label htmlFor={`renewalCycle-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
             <select 
+              id={`renewalCycle-${subscription.id}`}
               value={formData.renewalCycle}
-              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM'})}
+              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as RenewalCycle})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
-              <option value="MONTHLY">🔄 Monthly</option>
-              <option value="YEARLY">📅 Yearly</option>
-              <option value="CUSTOM">⚙️ Custom</option>
+              <option value={RenewalCycle.MONTHLY}>🔄 Monthly</option>
+              <option value={RenewalCycle.YEARLY}>📅 Yearly</option>
+              <option value={RenewalCycle.CUSTOM}>⚙️ Custom</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal date</label>
+            <label htmlFor={`renewalDate-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Renewal date</label>
             <input 
+              id={`renewalDate-${subscription.id}`}
               type="date" 
               value={formData.renewalDate}
               onChange={(e) => setFormData({...formData, renewalDate: e.target.value})}
@@ -178,8 +179,9 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Cost</label>
+            <label htmlFor={`costAmount-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Cost</label>
             <input 
+              id={`costAmount-${subscription.id}`}
               type="number" 
               value={formData.costAmount}
               onChange={(e) => setFormData({...formData, costAmount: parseFloat(e.target.value)})}
@@ -187,8 +189,9 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
+            <label htmlFor={`costCurrency-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
             <select 
+              id={`costCurrency-${subscription.id}`}
               value={formData.costCurrency}
               onChange={(e) => setFormData({...formData, costCurrency: e.target.value})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
@@ -233,10 +236,10 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
         <div className="space-y-2">
           {subscription.slackUserIds?.length && subscription.slackUserIds?.length > 0 ? (
             Array.from({ length: subscription.slackUserIds?.length }, (_, i) => (
-              <div key={i} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
+              <div key={subscription.slackUserIds[i]} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-black shadow-lg">
-                    U{i + 1}
+                    U{subscription.slackUserIds[i]}
                   </div>
                   <div>
                     <div className="font-bold text-gray-900">User {i + 1}</div>
@@ -286,8 +289,8 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
               </div>
               <div className="flex items-center gap-4">
                 <span className={`px-3 py-1 text-sm font-black rounded-full border-2 ${
-                  check.status === 'SENT' ? 'bg-blue-100 text-blue-700 border-blue-300' :
-                  check.status === 'CLOSED' ? 'bg-gray-100 text-gray-600 border-gray-300' :
+                  check.status === UsageCheckStatus.SENT ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                  check.status === UsageCheckStatus.CLOSED ? 'bg-gray-100 text-gray-600 border-gray-300' :
                   'bg-yellow-100 text-yellow-700 border-yellow-300'
                 }`}>
                   {check.status}

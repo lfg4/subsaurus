@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
-import { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
+import { GetSubscriptionByIdService } from '@/src/modules/subscription/application/GetSubscriptionById.service';
 import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
 import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
 import { RenewalCycle } from '@/src/types/enums';
@@ -20,11 +20,11 @@ export async function GET(
       );
     }
 
-    const getSubscriptionsService = container.resolve<GetSubscriptionsService>(
-      'GetSubscriptionsService'
+    const getSubscriptionByIdService = container.resolve<GetSubscriptionByIdService>(
+      'GetSubscriptionByIdService'
     );
 
-    const subscription = await getSubscriptionsService.findById(id);
+    const subscription = await getSubscriptionByIdService.execute(id);
 
     if (!subscription) {
       return NextResponse.json(

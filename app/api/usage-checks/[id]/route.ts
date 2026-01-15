@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
-import type { GetUsageChecksService } from '@/src/modules/usage-tracking/application/GetUsageChecks.service';
+import type { GetUsageCheckByIdService } from '@/src/modules/usage-tracking/application/GetUsageCheckById.service';
 
 export async function GET(
   _request: Request,
@@ -17,11 +17,11 @@ export async function GET(
       );
     }
 
-    const getUsageChecksService = container.resolve<GetUsageChecksService>(
-      'GetUsageChecksService'
+    const getUsageCheckByIdService = container.resolve<GetUsageCheckByIdService>(
+      'GetUsageCheckByIdService'
     );
 
-    const usageCheck = await getUsageChecksService.findById(id);
+    const usageCheck = await getUsageCheckByIdService.execute(id);
 
     if (!usageCheck) {
       return NextResponse.json(

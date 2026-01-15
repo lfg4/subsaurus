@@ -6,7 +6,8 @@ import { UsageResponseRepository } from '@/src/modules/usage-tracking/infrastruc
 
 import { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
 import { RenewSubscriptionService } from '@/src/modules/subscription/application/RenewSubscription.service';
-import { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
+import { GetAllSubscriptionsService } from '@/src/modules/subscription/application/GetAllSubscriptions.service';
+import { GetSubscriptionByIdService } from '@/src/modules/subscription/application/GetSubscriptionById.service';
 import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
 import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
 import { ImportSubscriptionsService } from '@/src/modules/import/application/ImportSubscriptions.service';
@@ -16,8 +17,9 @@ import { SendUsageCheckService } from '@/src/modules/usage-tracking/application/
 import { RecordUsageResponseService } from '@/src/modules/usage-tracking/application/RecordUsageResponse.service';
 import { ReSendUsageCheckService } from '@/src/modules/usage-tracking/application/ReSendUsageCheck.service';
 import { SendRenewalNotificationService } from '@/src/modules/usage-tracking/application/SendRenewalNotification.service';
-import { GetUsageChecksService } from '@/src/modules/usage-tracking/application/GetUsageChecks.service';
+import { GetUsageCheckByIdService } from '@/src/modules/usage-tracking/application/GetUsageCheckById.service';
 import { GetEnrichedUsageChecksService } from '@/src/modules/usage-tracking/application/GetEnrichedUsageChecks.service';
+import { GetUsageResponsesByCheckService } from '@/src/modules/usage-tracking/application/GetUsageResponsesByCheck.service';
 
 
 import { SlackClient } from '@/src/modules/slack/infrastructure/SlackClient';
@@ -111,8 +113,13 @@ container.register(
 );
 
 container.register(
-  'GetSubscriptionsService',
-  () => new GetSubscriptionsService(container.resolve('SubscriptionRepository'))
+  'GetAllSubscriptionsService',
+  () => new GetAllSubscriptionsService(container.resolve('SubscriptionRepository'))
+);
+
+container.register(
+  'GetSubscriptionByIdService',
+  () => new GetSubscriptionByIdService(container.resolve('SubscriptionRepository'))
 );
 
 container.register(
@@ -132,8 +139,8 @@ container.register(
 
 
 container.register(
-  'GetUsageChecksService',
-  () => new GetUsageChecksService(container.resolve('UsageCheckRepository'))
+  'GetUsageCheckByIdService',
+  () => new GetUsageCheckByIdService(container.resolve('UsageCheckRepository'))
 );
 
 container.register(
@@ -143,6 +150,11 @@ container.register(
     container.resolve('SubscriptionRepository'),
     container.resolve('UsageResponseRepository')
   )
+);
+
+container.register(
+  'GetUsageResponsesByCheckService',
+  () => new GetUsageResponsesByCheckService(container.resolve('UsageResponseRepository'))
 );
 
 container.register(
@@ -221,17 +233,21 @@ export const getCreateSubscriptionService = () =>
   container.resolve<CreateSubscriptionService>('CreateSubscriptionService');
 export const getRenewSubscriptionService = () =>
   container.resolve<RenewSubscriptionService>('RenewSubscriptionService');
-export const getGetSubscriptionsService = () =>
-  container.resolve<GetSubscriptionsService>('GetSubscriptionsService');
+export const getGetAllSubscriptionsService = () =>
+  container.resolve<GetAllSubscriptionsService>('GetAllSubscriptionsService');
+export const getGetSubscriptionByIdService = () =>
+  container.resolve<GetSubscriptionByIdService>('GetSubscriptionByIdService');
 export const getUpdateSubscriptionService = () =>
   container.resolve<UpdateSubscriptionService>('UpdateSubscriptionService');
 export const getDeleteSubscriptionService = () =>
   container.resolve<DeleteSubscriptionService>('DeleteSubscriptionService');
 
-export const getGetUsageChecksService = () =>
-  container.resolve<GetUsageChecksService>('GetUsageChecksService');
+export const getGetUsageCheckByIdService = () =>
+  container.resolve<GetUsageCheckByIdService>('GetUsageCheckByIdService');
 export const getGetEnrichedUsageChecksService = () =>
   container.resolve<GetEnrichedUsageChecksService>('GetEnrichedUsageChecksService');
+export const getGetUsageResponsesByCheckService = () =>
+  container.resolve<GetUsageResponsesByCheckService>('GetUsageResponsesByCheckService');
 export const getSendUsageCheckService = () =>
   container.resolve<SendUsageCheckService>('SendUsageCheckService');
 export const getRecordUsageResponseService = () =>

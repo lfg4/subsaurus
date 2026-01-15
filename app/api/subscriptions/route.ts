@@ -1,16 +1,16 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
-import type { GetSubscriptionsService } from '@/src/modules/subscription/application/GetSubscriptions.service';
+import type { GetAllSubscriptionsService } from '@/src/modules/subscription/application/GetAllSubscriptions.service';
 import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
 import type { RenewalCycle } from '@/src/types/enums';
 
 export async function GET() {
   try {
-    const getSubscriptionsService = container.resolve<GetSubscriptionsService>(
-      'GetSubscriptionsService'
+    const getAllSubscriptionsService = container.resolve<GetAllSubscriptionsService>(
+      'GetAllSubscriptionsService'
     );
 
-    const subscriptions = await getSubscriptionsService.findAll();
+    const subscriptions = await getAllSubscriptionsService.execute();
     const data = subscriptions.map(sub => sub.toPrimitives());
 
     return NextResponse.json(data);

@@ -2,6 +2,8 @@
 
 import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
+import { subscriptionsApi } from '@/app/lib/api';
+import { RenewalCycle } from '@/src/types/enums';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -13,7 +15,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
   const [formData, setFormData] = useState({
     name: '',
     project: '',
-    renewalCycle: 'MONTHLY' as 'MONTHLY' | 'YEARLY' | 'CUSTOM',
+    renewalCycle: RenewalCycle.MONTHLY,
     renewalDate: '',
     costAmount: 0,
     costCurrency: 'EUR'
@@ -32,16 +34,10 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
 
     setIsSaving(true);
     try {
-      const response = await fetch('/api/subscriptions', {
-  method: 'POST',
-  headers: { 'Content-Type': 'application/json' },
-  body: JSON.stringify({
-    ...formData,
-    slackUserIds: ['U091BTTVCQ6']
-  })
-});
-
-      if (!response.ok) throw new Error('Error creating subscription');
+      await subscriptionsApi.create({
+        ...formData,
+        slackUserIds: ['U091BTTVCQ6']
+      });
 
       alert('✅ Subscription created successfully!');
       setCurrentPage('subscriptions');
@@ -76,7 +72,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
         </h2>
         <div className="grid grid-cols-2 gap-6">
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Name *</label>
+            <label htmlFor="name" className="block text-sm font-bold text-gray-700 mb-2">Name *</label>
             <input 
               type="text" 
               value={formData.name}
@@ -86,7 +82,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Project</label>
+            <label htmlFor="project" className="block text-sm font-bold text-gray-700 mb-2">Project</label>
             <input 
               type="text" 
               value={formData.project}
@@ -96,19 +92,19 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
+            <label htmlFor="renewalCycle" className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>
             <select 
               value={formData.renewalCycle}
-              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as 'MONTHLY' | 'YEARLY' | 'CUSTOM'})}
+              onChange={(e) => setFormData({...formData, renewalCycle: e.target.value as RenewalCycle})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
-              <option value="MONTHLY">🔄 Monthly</option>
-              <option value="YEARLY">📅 Yearly</option>
-              <option value="CUSTOM">⚙️ Custom</option>
+              <option value={RenewalCycle.MONTHLY}>🔄 Monthly</option>
+              <option value={RenewalCycle.YEARLY}>📅 Yearly</option>
+              <option value={RenewalCycle.CUSTOM}>⚙️ Custom</option>
             </select>
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Renewal date *</label>
+            <label htmlFor="renewalDate" className="block text-sm font-bold text-gray-700 mb-2">Renewal date *</label>
             <input 
               type="date" 
               value={formData.renewalDate}
@@ -117,7 +113,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Cost</label>
+            <label htmlFor="costAmount" className="block text-sm font-bold text-gray-700 mb-2">Cost</label>
             <input 
               type="number" 
               value={formData.costAmount}
@@ -128,7 +124,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
             />
           </div>
           <div>
-            <label className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
+            <label htmlFor="costCurrency" className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
             <select 
               value={formData.costCurrency}
               onChange={(e) => setFormData({...formData, costCurrency: e.target.value})}

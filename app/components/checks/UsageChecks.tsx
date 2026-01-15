@@ -3,6 +3,8 @@
 import { Check, ChevronRight } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
 import { useState, useEffect } from 'react';
+import { usageChecksApi } from '@/app/lib/api';
+import { UsageCheckStatus } from '@/src/types/enums';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -17,8 +19,7 @@ export function UsageChecks({ setCurrentPage, setSelectedCheckId }: UsageChecksP
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/usage-checks')
-      .then(res => res.json())
+    usageChecksApi.getAll()
       .then(data => {
         console.log('API Response:', data);
         setChecks(Array.isArray(data) ? data : []);
@@ -80,7 +81,7 @@ export function UsageChecks({ setCurrentPage, setSelectedCheckId }: UsageChecksP
                   <td className="px-6 py-4 text-gray-600">{formatDate(check.sendAt)}</td>
                   <td className="px-6 py-4">
                     <span className={`inline-flex px-2 py-1 text-xs font-medium rounded-full ${
-                      check.status === 'SENT' ? 'bg-blue-50 text-blue-700' :
+                      check.status === UsageCheckStatus.SENT ? 'bg-blue-50 text-blue-700' :
                       check.status === 'CLOSED' ? 'bg-gray-100 text-gray-600' :
                       'bg-yellow-50 text-yellow-700'
                     }`}>

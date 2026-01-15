@@ -1,0 +1,59 @@
+import { apiClient } from './client';
+import type { SubscriptionPrimitives } from '@/src/modules/subscription/domain/Subscription';
+import type { RenewalCycle } from '@/src/types/enums';
+
+export interface CreateSubscriptionDTO {
+  slackWorkspaceId?: string;
+  createdBySlackUserId?: string;
+  name: string;
+  costAmount: number;
+  costCurrency?: string;
+  renewalCycle: RenewalCycle;
+  renewalDate: string;
+  slackUserIds?: string[];
+  project?: string;
+}
+
+export interface UpdateSubscriptionDTO {
+  name?: string;
+  costAmount?: number;
+  costCurrency?: string;
+  renewalCycle?: RenewalCycle;
+  renewalDate?: string;
+  project?: string;
+}
+
+export interface ApiResponse<T> {
+  success: boolean;
+  data?: T;
+  error?: string;
+}
+
+class SubscriptionsApi {
+  
+  async getAll(): Promise<SubscriptionPrimitives[]> {
+    return apiClient.get<SubscriptionPrimitives[]>('/subscriptions');
+  }
+
+  
+  async getById(id: number): Promise<SubscriptionPrimitives> {
+    return apiClient.get<SubscriptionPrimitives>(`/subscriptions/${id}`);
+  }
+
+  
+  async create(data: CreateSubscriptionDTO): Promise<ApiResponse<SubscriptionPrimitives>> {
+    return apiClient.post<ApiResponse<SubscriptionPrimitives>>('/subscriptions', data);
+  }
+
+  
+  async update(id: number, data: UpdateSubscriptionDTO): Promise<ApiResponse<SubscriptionPrimitives>> {
+    return apiClient.patch<ApiResponse<SubscriptionPrimitives>>(`/subscriptions/${id}`, data);
+  }
+
+  async delete(id: number): Promise<ApiResponse<void>> {
+    return apiClient.delete<ApiResponse<void>>(`/subscriptions/${id}`);
+  }
+}
+
+export const subscriptionsApi = new SubscriptionsApi();
+

@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
-import type { UsageResponseRepository } from '@/src/modules/usage-tracking/infrastructure/UsageResponseRepository';
+import type { GetUsageResponsesByCheckService } from '@/src/modules/usage-tracking/application/GetUsageResponsesByCheck.service';
 
 export async function GET(
   _request: Request,
@@ -17,11 +17,11 @@ export async function GET(
       );
     }
 
-    const usageResponseRepository = container.resolve<UsageResponseRepository>(
-      'UsageResponseRepository'
+    const getUsageResponsesByCheckService = container.resolve<GetUsageResponsesByCheckService>(
+      'GetUsageResponsesByCheckService'
     );
 
-    const responses = await usageResponseRepository.findByUsageCheck(usageCheckId);
+    const responses = await getUsageResponsesByCheckService.execute(usageCheckId);
     const data = responses.map(r => r.toPrimitives());
 
     return NextResponse.json(data);

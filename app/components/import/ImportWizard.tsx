@@ -6,6 +6,7 @@ import { ColumnMapper } from './ColumnMapper';
 import { ImportPreview } from './ImportPreview';
 import { ManualSubscriptionSelector } from './ManualSubscriptionSelector';
 import { ParseCSVService } from '@/app/lib/import/ParseCSV.service';
+import { importApi } from '@/app/lib/api';
 
 type Step = 'upload' | 'mapping' | 'manual-select' | 'preview' | 'success' | 'error';
 
@@ -85,24 +86,14 @@ export function ImportWizard({
       if (manualMode) {
         setStep('manual-select');
       } else {
-        const response = await fetch('/api/import/detect', {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({
-            transactions: transactions.map(tx => ({
-              date: tx.date.toISOString(),
-              description: tx.description,
-              amount: tx.amount,
-              currency: tx.currency,
-            }))
-          })
-        });
-
-        if (!response.ok) {
-          throw new Error('Error detecting subscriptions');
-        }
-
-        const { previews } = await response.json();
+        const { previews } = await importApi.detectSubscriptions(
+          transactions.map(tx => ({
+            date: tx.date.toISOString(),
+            description: tx.description,
+            amount: tx.amount,
+            currency: tx.currency,
+          }))
+        );
         
         setSubscriptions(previews);
         setStep('preview');
@@ -203,48 +194,24 @@ export function ImportWizard({
       const parser = new ParseCSVService();
       const transactions = await parser.parseTransactions(file, mapping);
       
-      const response = await fetch('/api/import/detect', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          transactions: transactions.map(tx => ({
-            date: tx.date.toISOString(),
-            description: tx.description,
-            amount: tx.amount,
-            currency: tx.currency,
-          }))
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('Error detecting patterns');
-      }
-
-      const { previews } = await response.json() as { previews: SubscriptionPreview[] };
+      const { previews } = await importApi.detectSubscriptions(
+        transactions.map(tx => ({
+          date: tx.date.toISOString(),
+          description: tx.description,
+          amount: tx.amount,
+          currency: tx.currency,
+        }))
+      );
+      
       const selectedPreviews = previews.filter(p => selectedNames.includes(p.name));
 
-      const confirmResponse = await fetch('/api/import/confirm', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          patterns: selectedPreviews,
-          options: {
-            slackWorkspaceId,
-            createdBySlackUserId,
-            defaultSlackUserIds,
-            skipDuplicates: true,
-          },
-        }),
+      const result = await importApi.confirmImport(selectedPreviews, {
+        slackWorkspaceId,
+        createdBySlackUserId,
+        defaultSlackUserIds,
+        skipDuplicates: true,
       });
 
-      if (!confirmResponse.ok) {
-        const errorData = await confirmResponse.json();
-        throw new Error(errorData.error || 'Error importing subscriptions');
-      }
-
-      const result = await confirmResponse.json();
       setImportResult(result);
       setStep('success');
 

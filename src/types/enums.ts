@@ -2,6 +2,7 @@
 export enum UsageCheckStatus {
   SCHEDULED = 'SCHEDULED',
   SENT = 'SENT',
+  CLOSED = 'CLOSED',
 }
 
 export enum UsageResponseType {

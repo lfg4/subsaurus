@@ -1,3 +1,4 @@
+import type { UsageCheck } from '../domain/UsageCheck';
 import type { UsageCheckRepository } from '../infrastructure/UsageCheckRepository';
 import type { UsageResponseRepository } from '../infrastructure/UsageResponseRepository';
 import type { SubscriptionRepository } from '@/src/modules/subscription/infrastructure/SubscriptionRepository';
@@ -21,7 +22,7 @@ export class GetEnrichedUsageChecksService {
   ) {}
 
   async execute(subscriptionId?: number): Promise<EnrichedUsageCheckDTO[]> {
-    let usageChecks;
+    let usageChecks: UsageCheck[];
     
     if (subscriptionId) {
       usageChecks = await this.usageCheckRepository.findBySubscriptionId(subscriptionId);
