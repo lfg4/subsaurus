@@ -239,7 +239,6 @@ container.register<GetSlackUsersService>('GetSlackUsersService', () => {
 container.register(
   'SyncSlackUsersService',
   () => new SyncSlackUsersService(
-    container.resolve('SlackClient'),
     container.resolve('SlackUserRepository')
   )
 );
