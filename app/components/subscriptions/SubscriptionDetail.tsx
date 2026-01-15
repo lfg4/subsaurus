@@ -57,7 +57,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
           name: data.name,
           project: data.projects?.[0] || '',
           renewalCycle: data.renewalCycle,
-          renewalDate: data.renewalDate,
+          renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
           costAmount: data.costAmount,
           costCurrency: data.costCurrency
         });

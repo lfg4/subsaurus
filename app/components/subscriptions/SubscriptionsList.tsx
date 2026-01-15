@@ -5,6 +5,7 @@ import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
 import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
+import { NewSubscription } from './NewSubscription';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -30,6 +31,7 @@ export function SubscriptionsList({
   const [filterUrgency, setFilterUrgency] = useState<string>('all');
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [showNewSubscription, setShowNewSubscription] = useState(false);
 
   useEffect(() => {
     fetch('/api/subscriptions')
@@ -53,10 +55,23 @@ export function SubscriptionsList({
     );
   }
 
-  const uniqueProjects = Array.from(new Set((subscriptions || []).flatMap(s => s.projects)));
+  if (showNewSubscription) {
+  return <NewSubscription 
+    setCurrentPage={() => { 
+      setShowNewSubscription(false); 
+      setCurrentPage('subscriptions');
+      fetch('/api/subscriptions')
+        .then(res => res.json())
+        .then(data => setSubscriptions(data))
+        .catch(err => console.error('Error:', err));
+    }} 
+  />;
+}
+
+  const uniqueProjects = Array.from(new Set(Array.isArray(subscriptions) ? subscriptions.flatMap(s => s.projects || []) : []));
   const now = new Date();
   
-  const filteredSubscriptions = subscriptions
+  const filteredSubscriptions = (Array.isArray(subscriptions) ? subscriptions : [])
     .filter(s => {
       const matchesSearch = s.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                            s.projects.some(p => p.toLowerCase().includes(searchTerm.toLowerCase()));
@@ -121,10 +136,14 @@ export function SubscriptionsList({
           <h1 className="text-4xl font-black text-gray-900">Subscriptions</h1>
           <span className="text-3xl">🍖</span>
         </div>
-        <button type="button" className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg border-2 border-green-300">
-          <Plus className="w-5 h-5" />
-          New subscription
-        </button>
+        <button 
+  type="button" 
+  onClick={() => setShowNewSubscription(true)}
+  className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 flex items-center gap-2 shadow-lg border-2 border-green-300"
+>
+  <Plus className="w-5 h-5" />
+  New subscription
+</button>
       </div>
 
       {}
@@ -217,9 +236,13 @@ export function SubscriptionsList({
           <div className="text-8xl mb-4">🦖</div>
           <h3 className="text-2xl font-black text-gray-900 mb-2">The dino is hungry!</h3>
           <p className="text-gray-600 mb-6 font-semibold">No subscriptions yet. Add the first one!</p>
-          <button type="button" className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300">
-            🍖 Create subscription
-          </button>
+          <button 
+  type="button" 
+  onClick={() => setShowNewSubscription(true)}
+  className="bg-gradient-to-r from-green-400 to-emerald-400 text-white px-6 py-3 rounded-xl font-bold hover:from-green-500 hover:to-emerald-500 transition-all transform hover:scale-105 shadow-lg border-2 border-green-300"
+>
+  🍖 Create subscription
+</button>
         </div>
       ) : (
         <div className="bg-white rounded-2xl border-4 border-green-400 overflow-hidden shadow-xl">
@@ -250,7 +273,9 @@ export function SubscriptionsList({
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-semibold">{formatDate(sub.renewalDate)}</td>
                   <td className="px-6 py-4">
-                    <div className="font-black text-gray-900">€{sub.costAmount}</div>
+                   <div className="font-black text-gray-900">
+                    {sub.costCurrency === 'EUR' ? '€' : sub.costCurrency === 'USD' ? '$' : '£'}{sub.costAmount}
+                    </div>
                     <div className="text-xs text-gray-500 font-semibold">{sub.costCurrency}</div>
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-bold">{sub.slackUserIds?.length || 0}</td>

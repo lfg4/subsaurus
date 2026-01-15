@@ -2,31 +2,10 @@
 
 import { Check, ChevronRight } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
+import { useState, useEffect } from 'react';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
-const mockUsageChecks = [
-  {
-    id: 1,
-    subscriptionId: 1,
-    subscriptionName: 'Figma Professional',
-    periodStart: '2025-12-20',
-    periodEnd: '2026-01-20',
-    sendAt: '2026-01-15T10:00:00Z',
-    status: 'SENT',
-    responsesCount: 5
-  },
-  {
-    id: 2,
-    subscriptionId: 2,
-    subscriptionName: 'GitHub Teams',
-    periodStart: '2025-12-15',
-    periodEnd: '2026-01-15',
-    sendAt: '2026-01-10T10:00:00Z',
-    status: 'SENT',
-    responsesCount: 10
-  }
-];
 
 interface UsageChecksProps {
   setCurrentPage: (page: PageType) => void;
@@ -34,7 +13,32 @@ interface UsageChecksProps {
 }
 
 export function UsageChecks({ setCurrentPage, setSelectedCheckId }: UsageChecksProps) {
-  const checks = mockUsageChecks;
+  const [checks, setChecks] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    fetch('/api/usage-checks')
+      .then(res => res.json())
+      .then(data => {
+        console.log('API Response:', data);
+        setChecks(Array.isArray(data) ? data : []);
+        setIsLoading(false);
+      })
+      .catch(err => {
+        console.error('Error:', err);
+        setChecks([]);
+        setIsLoading(false);
+      });
+  }, []);
+
+  if (isLoading) {
+    return (
+      <div className="text-center py-12">
+        <div className="text-8xl mb-4 animate-bounce">🦖</div>
+        <div className="text-xl font-bold text-gray-700">Loading usage checks...</div>
+      </div>
+    );
+  }
 
   const handleViewDetail = (id: number) => {
     setSelectedCheckId(id);
