@@ -4,6 +4,7 @@ export interface AppSettingsPrimitives {
   id: number;
   slackWorkspaceId: string;
   daysBeforeRenewal: number;
+  isActive: boolean;
   updatedAt: Date;
 }
 
@@ -23,6 +24,7 @@ export class SettingsRepository {
       create: {
         slackWorkspaceId,
         daysBeforeRenewal,
+        isActive: true,
       },
     });
 
@@ -36,9 +38,10 @@ export class SettingsRepository {
 
   async getAllWorkspaceIds(): Promise<string[]> {
     const settings = await prisma.appSettings.findMany({
+      where: { isActive: true },
       select: { slackWorkspaceId: true },
     });
-    return settings.map(s => s.slackWorkspaceId);
+    return settings.map((s: { slackWorkspaceId: string }) => s.slackWorkspaceId);
   }
 }
 
