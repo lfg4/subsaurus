@@ -1,11 +1,24 @@
 'use client';
 
-const API_BASE = 'https://subsaurus.vercel.app/api';
-
 export function LoginPage() {
   const handleSlackLogin = () => {
-    window.location.href = `${API_BASE}/auth/slack/start`;
+    window.location.href = '/api/auth/slack/start';
   };
+
+  const errorMessages: Record<string, string> = {
+    access_denied: 'You denied access to Subsaurus',
+    workspace_not_found: 'Your workspace is not registered',
+    workspace_inactive: 'Your workspace has been disabled',
+    user_not_found: 'User not registered in the system',
+    user_inactive: 'Your account has been disabled',
+    admin_required: 'Only admins can access Subsaurus',
+    authentication_failed: 'Authentication failed. Please try again',
+    server_error: 'Server error. Please try again later',
+  };
+
+  const urlParams = typeof window !== 'undefined' ? new URLSearchParams(window.location.search) : null;
+  const errorCode = urlParams?.get('error');
+  const errorMessage = errorCode ? errorMessages[errorCode] || 'An error occurred during login' : null;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-green-50 via-emerald-50 to-teal-50 flex items-center justify-center p-4">
@@ -17,6 +30,14 @@ export function LoginPage() {
           <h1 className="text-4xl font-black text-gray-900 mb-2 tracking-tight">Subsaurus</h1>
           <p className="text-lg text-gray-600 font-medium">The dinosaur that devours unnecessary subscriptions! 🍽️</p>
         </div>
+
+        {errorMessage && (
+          <div className="mb-6 p-4 bg-red-50 border-2 border-red-300 rounded-xl">
+            <p className="text-red-700 font-semibold text-sm text-center">
+              ⚠️ {errorMessage}
+            </p>
+          </div>
+        )}
         
         <button
           type="button"
@@ -31,7 +52,7 @@ export function LoginPage() {
         </button>
 
         <p className="text-sm text-gray-500 text-center mt-6 font-medium">
-          🔒 Authorized users only
+          🔒 Authorized admins only
         </p>
       </div>
     </div>

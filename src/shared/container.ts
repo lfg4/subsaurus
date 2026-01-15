@@ -2,6 +2,8 @@
 import { SubscriptionRepository } from '@/src/modules/subscription/infrastructure/SubscriptionRepository';
 import { UsageCheckRepository } from '@/src/modules/usage-tracking/infrastructure/UsageCheckRepository';
 import { UsageResponseRepository } from '@/src/modules/usage-tracking/infrastructure/UsageResponseRepository';
+import { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import { SessionRepository } from '@/src/modules/auth/infrastructure/SessionRepository';
 
 
 import { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
@@ -27,6 +29,9 @@ import { SlackMessageBuilder } from '@/src/modules/slack/infrastructure/SlackMes
 import { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
 import { SlackCommandHandler } from '@/src/modules/slack/application/SlackCommandHandler';
 import { SyncSlackUsersService } from '@/src/modules/slack/application/SyncSlackUsers.service';
+
+import { AuthenticateUserService } from '@/src/modules/auth/application/AuthenticateUser.service';
+import { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
 
 /**
  * Simple Dependency Injection Container
@@ -87,6 +92,8 @@ const container = new Container();
 container.register('SubscriptionRepository', () => new SubscriptionRepository());
 container.register('UsageCheckRepository', () => new UsageCheckRepository());
 container.register('UsageResponseRepository', () => new UsageResponseRepository());
+container.register('SettingsRepository', () => new SettingsRepository());
+container.register('SessionRepository', () => new SessionRepository());
 
 
 container.register('SlackClient', () => new SlackClient());
@@ -99,7 +106,8 @@ container.register(
   () =>
     new CreateSubscriptionService(
       container.resolve('SubscriptionRepository'),
-      container.resolve('UsageCheckRepository')
+      container.resolve('UsageCheckRepository'),
+      container.resolve('SettingsRepository')
     )
 );
 
@@ -108,7 +116,8 @@ container.register(
   () =>
     new RenewSubscriptionService(
       container.resolve('SubscriptionRepository'),
-      container.resolve('UsageCheckRepository')
+      container.resolve('UsageCheckRepository'),
+      container.resolve('SettingsRepository')
     )
 );
 
@@ -216,6 +225,26 @@ container.register(
 container.register(
   'SyncSlackUsersService',
   () => new SyncSlackUsersService(container.resolve('SlackUserRepository'))
+);
+
+
+container.register(
+  'AuthenticateUserService',
+  () =>
+    new AuthenticateUserService(
+      container.resolve('SessionRepository'),
+      container.resolve('SlackUserRepository'),
+      container.resolve('SettingsRepository')
+    )
+);
+
+container.register(
+  'ValidateSessionService',
+  () =>
+    new ValidateSessionService(
+      container.resolve('SessionRepository'),
+      container.resolve('SlackUserRepository')
+    )
 );
 
 

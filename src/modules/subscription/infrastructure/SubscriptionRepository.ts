@@ -84,10 +84,11 @@ export class SubscriptionRepository {
   }
 
   /**
-   * Find all subscriptions
+   * Find all subscriptions (optionally filtered by workspace)
    */
-  async findAll(): Promise<Subscription[]> {
+  async findAll(slackWorkspaceId?: string): Promise<Subscription[]> {
     const subscriptions = await prisma.subscription.findMany({
+      where: slackWorkspaceId ? { slackWorkspaceId } : undefined,
       include: {
         subscriptionUsers: true,
       },

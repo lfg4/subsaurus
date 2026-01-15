@@ -39,9 +39,9 @@ export class RenewalCalculator {
     return periodStart;
   }
 
-  static calculateUsageCheckDate(renewalDate: Date): Date {
+  static calculateUsageCheckDate(renewalDate: Date, daysBeforeRenewal: number = 7): Date {
     const sendDate = new Date(renewalDate);
-    sendDate.setDate(sendDate.getDate() - 7);
+    sendDate.setDate(sendDate.getDate() - daysBeforeRenewal);
     return sendDate;
   }
 

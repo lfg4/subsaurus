@@ -21,16 +21,16 @@ export class GetEnrichedUsageChecksService {
     private readonly usageResponseRepository: UsageResponseRepository
   ) {}
 
-  async execute(subscriptionId?: number): Promise<EnrichedUsageCheckDTO[]> {
+  async execute(subscriptionId?: number, slackWorkspaceId?: string): Promise<EnrichedUsageCheckDTO[]> {
     let usageChecks: UsageCheck[];
     
     if (subscriptionId) {
       usageChecks = await this.usageCheckRepository.findBySubscriptionId(subscriptionId);
     } else {
-      usageChecks = await this.usageCheckRepository.findAll();
+      usageChecks = await this.usageCheckRepository.findAll(slackWorkspaceId);
     }
 
-    const subscriptions = await this.subscriptionRepository.findAll();
+    const subscriptions = await this.subscriptionRepository.findAll(slackWorkspaceId);
 
     const enrichedChecks: EnrichedUsageCheckDTO[] = [];
 

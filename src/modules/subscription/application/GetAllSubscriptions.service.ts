@@ -4,8 +4,8 @@ import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepos
 export class GetAllSubscriptionsService {
   constructor(private readonly subscriptionRepository: SubscriptionRepository) {}
 
-  async execute(): Promise<Subscription[]> {
-    return this.subscriptionRepository.findAll();
+  async execute(slackWorkspaceId?: string): Promise<Subscription[]> {
+    return this.subscriptionRepository.findAll(slackWorkspaceId);
   }
 }
 

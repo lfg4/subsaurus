@@ -4,13 +4,16 @@ import type { GetAllSubscriptionsService } from '@/src/modules/subscription/appl
 import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
 import type { RenewalCycle } from '@/src/types/enums';
 
-export async function GET() {
+export async function GET(request: Request) {
   try {
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+
     const getAllSubscriptionsService = container.resolve<GetAllSubscriptionsService>(
       'GetAllSubscriptionsService'
     );
 
-    const subscriptions = await getAllSubscriptionsService.execute();
+    const subscriptions = await getAllSubscriptionsService.execute(workspaceId || undefined);
     const data = subscriptions.map(sub => sub.toPrimitives());
 
     return NextResponse.json(data);
@@ -38,9 +41,23 @@ export async function POST(request: Request) {
       'CreateSubscriptionService'
     );
 
+    if (!body.slackWorkspaceId) {
+      return NextResponse.json(
+        { error: 'Missing required field: slackWorkspaceId' },
+        { status: 400 }
+      );
+    }
+
+    if (!body.createdBySlackUserId) {
+      return NextResponse.json(
+        { error: 'Missing required field: createdBySlackUserId' },
+        { status: 400 }
+      );
+    }
+
     const subscription = await createSubscriptionService.execute({
-      slackWorkspaceId: body.slackWorkspaceId || 'T03FUJM8E',
-      createdBySlackUserId: body.createdBySlackUserId || 'U091BTTVCQ6',
+      slackWorkspaceId: body.slackWorkspaceId,
+      createdBySlackUserId: body.createdBySlackUserId,
       name: body.name,
       price: parseFloat(body.costAmount),
       currency: body.costCurrency || 'EUR',

@@ -77,10 +77,11 @@ export class UsageCheckRepository {
   }
 
   /**
-   * Find all usage checks
+   * Find all usage checks (optionally filtered by workspace)
    */
-  async findAll(): Promise<UsageCheck[]> {
+  async findAll(slackWorkspaceId?: string): Promise<UsageCheck[]> {
     const usageChecks = await prisma.usageCheck.findMany({
+      where: slackWorkspaceId ? { slackWorkspaceId } : undefined,
       orderBy: { sendAt: 'desc' },
     });
 

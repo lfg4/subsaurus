@@ -5,6 +5,7 @@ import { formatDate } from '@/app/utils/formatDate';
 import { useState, useEffect } from 'react';
 import { usageChecksApi } from '@/app/lib/api';
 import { UsageCheckStatus, UsageResponseType } from '@/src/types/enums';
+import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -18,6 +19,7 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
   const [check, setCheck] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [isSendingReminder, setIsSendingReminder] = useState(false);
 
  useEffect(() => {
     console.log('Fetching data for checkId:', checkId);
@@ -37,6 +39,30 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
         setIsLoading(false);
       });
   }, [checkId]);
+
+  const handleSendReminder = async () => {
+    if (!checkId) return;
+    
+    setIsSendingReminder(true);
+    try {
+      const result = await usageChecksApi.resend(checkId);
+      
+      if (result.success) {
+        if (result.total === 0) {
+          toast.info(result.message || 'All users have already responded');
+        } else {
+          toast.success(`Reminders sent successfully! Sent: ${result.sent}, Failed: ${result.failed}, Total: ${result.total || 0}`);
+        }
+      } else {
+        toast.error(result.message || 'Error sending reminders');
+      }
+    } catch (error) {
+      console.error('Error sending reminder:', error);
+      toast.error('Error sending reminders');
+    } finally {
+      setIsSendingReminder(false);
+    }
+  };
 
   if (isLoading) {
     return (
@@ -70,9 +96,14 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
           </p>
         </div>
         {check.status === UsageCheckStatus.SENT && (
-          <button type="button" className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2">
+          <button 
+            type="button" 
+            onClick={handleSendReminder}
+            disabled={isSendingReminder}
+            className="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition flex items-center gap-2 disabled:bg-gray-400 disabled:cursor-not-allowed"
+          >
             <Clock className="w-5 h-5" />
-            Send reminder
+            {isSendingReminder ? 'Sending...' : 'Send reminder'}
           </button>
         )}
       </div>

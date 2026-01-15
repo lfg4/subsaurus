@@ -4,14 +4,17 @@ import { useState } from 'react';
 import { ChevronRight } from 'lucide-react';
 import { subscriptionsApi } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
+import { toast } from 'sonner';
+import type { User } from '@/app/types';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 interface NewSubscriptionProps {
   setCurrentPage: (page: PageType) => void;
+  currentUser: User;
 }
 
-export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
+export function NewSubscription({ setCurrentPage, currentUser }: NewSubscriptionProps) {
   const [formData, setFormData] = useState({
     name: '',
     project: '',
@@ -24,11 +27,11 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
 
   const handleCreate = async () => {
     if (!formData.name.trim()) {
-      alert('⚠️ Name is required');
+      toast.warning('Name is required');
       return;
     }
     if (!formData.renewalDate) {
-      alert('⚠️ Renewal date is required');
+      toast.warning('Renewal date is required');
       return;
     }
 
@@ -36,14 +39,16 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     try {
       await subscriptionsApi.create({
         ...formData,
-        slackUserIds: ['U091BTTVCQ6']
+        slackWorkspaceId: currentUser.slackWorkspaceId,
+        createdBySlackUserId: currentUser.slackUserId,
+        slackUserIds: [currentUser.slackUserId]
       });
 
-      alert('✅ Subscription created successfully!');
+      toast.success('Subscription created successfully!');
       setCurrentPage('subscriptions');
     } catch (error) {
       console.error('Error:', error);
-      alert('❌ Error creating subscription');
+      toast.error('Error creating subscription');
     } finally {
       setIsSaving(false);
     }

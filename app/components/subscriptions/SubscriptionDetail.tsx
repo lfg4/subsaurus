@@ -6,6 +6,7 @@ import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { subscriptionsApi } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
+import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -77,11 +78,11 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
     try {
       await subscriptionsApi.update(subscriptionId, formData);
 
-      alert('✅ Changes saved successfully');
+      toast.success('Changes saved successfully');
       setCurrentPage('subscriptions');
     } catch (error) {
       console.error('Error:', error);
-      alert('❌ Error saving changes');
+      toast.error('Error saving changes');
     } finally {
       setIsSaving(false);
     }
