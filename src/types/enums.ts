@@ -12,6 +12,8 @@ export enum UsageResponseType {
 
 export enum RenewalCycle {
   MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  SEMESTRAL = 'SEMESTRAL',
   YEARLY = 'YEARLY',
   CUSTOM = 'CUSTOM',
 }
