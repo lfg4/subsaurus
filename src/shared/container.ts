@@ -35,12 +35,14 @@ import { AuthenticateUserService } from '@/src/modules/auth/application/Authenti
 import { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
 import { ProcessRenewalNotificationsService } from '@/src/modules/subscription/application/ProcessRenewalNotifications.service';
 
+type Factory<T = unknown> = () => T;
+
 /**
  * Simple Dependency Injection Container
  * Manages singletons for the application
  */
 class Container {
-  private instances = new Map<string, unknown>();
+  private instances = new Map<string, Factory | unknown>();
 
   /**
    * Register a factory function
@@ -64,10 +66,10 @@ class Container {
     const instanceKey = `_instance_${key}`;
     if (!this.instances.has(instanceKey)) {
       
-      this.instances.set(instanceKey, factory());
+      this.instances.set(instanceKey, (factory as Factory)());
     }
 
-    return this.instances.get(instanceKey);
+    return this.instances.get(instanceKey) as T;
   }
 
   /**
