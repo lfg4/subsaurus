@@ -9,13 +9,15 @@ import { Sidebar } from '@/app/components/layout/Sidebar';
 import { Header } from '@/app/components/layout/Header';
 import { SubscriptionsList } from '@/app/components/subscriptions/SubscriptionsList';
 import { SubscriptionDetail } from '@/app/components/subscriptions/SubscriptionDetail';
+import { SubscriptionView } from '@/app/components/subscriptions/SubscriptionView';
 import { UsageChecks } from '@/app/components/checks/UsageChecks';
 import { CheckDetail } from '@/app/components/checks/CheckDetail';
 import { SettingsPage } from '@/app/components/settings/SettingsPage';
 import { ImportWizard } from '@/app/components/import/ImportWizard';
+import { DashboardPage } from '@/app/components/analytics/DashboardPage';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings' | 'import'>('subscriptions');
+  const [currentPage, setCurrentPage] = useState<'subscriptions' | 'subscription-detail' | 'subscription-view' | 'checks' | 'check-detail' | 'settings' | 'import' | 'dashboard'>('dashboard');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<number | null>(null);
@@ -87,6 +89,15 @@ export default function App() {
         <Header currentUser={currentUser} onLogout={handleLogout} />
         
         <main className="p-8">
+          
+    {currentPage === 'dashboard' && currentUser && (
+  <DashboardPage 
+    currentUser={currentUser}
+    setCurrentPage={setCurrentPage}
+    setSelectedSubscriptionId={setSelectedSubscriptionId}
+  />
+)}
+          
           {currentPage === 'subscriptions' && currentUser && (
             <SubscriptionsList 
               searchTerm={searchTerm}
@@ -105,6 +116,14 @@ export default function App() {
               currentUser={currentUser}
             />
           )}
+          {currentPage === 'subscription-view' && selectedSubscriptionId && currentUser && (
+  <SubscriptionView
+    subscriptionId={selectedSubscriptionId}
+    setCurrentPage={setCurrentPage}
+    setSelectedSubscriptionId={setSelectedSubscriptionId}
+    currentUser={currentUser}
+  />
+)}
           {currentPage === 'checks' && currentUser && (
             <UsageChecks 
               setCurrentPage={setCurrentPage}

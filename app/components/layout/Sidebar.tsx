@@ -1,6 +1,6 @@
 'use client';
 
-import { FileText, Check, Settings, Upload } from 'lucide-react';
+import { FileText, Check, Settings, Upload, BarChart3 } from 'lucide-react';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings' | 'import';
 
@@ -11,6 +11,7 @@ interface SidebarProps {
 
 export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
   const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string }> = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, emoji: '📊' },
     { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖' },
     { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤' },
     { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅' },

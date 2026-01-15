@@ -38,6 +38,8 @@ import { AuthenticateUserService } from '@/src/modules/auth/application/Authenti
 import { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
 import { ProcessRenewalNotificationsService } from '@/src/modules/subscription/application/ProcessRenewalNotifications.service';
 
+import { GetDashboardStatsService } from '@/src/modules/analytics/application/GetDashboardStats.service';
+
 type Factory<T = unknown> = () => T;
 
 /**
@@ -275,6 +277,15 @@ container.register(
     )
 );
 
+container.register(
+  'GetDashboardStatsService',
+  () =>
+    new GetDashboardStatsService(
+      container.resolve('SubscriptionRepository'),
+      container.resolve('UsageCheckRepository'),
+      container.resolve('UsageResponseRepository')
+    )
+);
 
 export { container };
 
