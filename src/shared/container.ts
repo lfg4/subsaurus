@@ -294,3 +294,8 @@ export const getSlackCommandHandler = () =>
 export const getSyncSlackUsersService = () =>
   container.resolve<SyncSlackUsersService>('SyncSlackUsersService');
 
+export const getSettingsRepository = () =>
+  container.resolve<SettingsRepository>('SettingsRepository');
+export const getSlackUserRepository = () =>
+  container.resolve<SlackUserRepository>('SlackUserRepository');
+

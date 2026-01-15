@@ -77,6 +77,18 @@ export class SlackUserRepository {
     return users.map(u => this.toDomain(u));
   }
 
+  async findAdminsByWorkspaceId(workspaceId: string): Promise<SlackUserWithAuth[]> {
+    const users = await prisma.slackUser.findMany({
+      where: {
+        slackWorkspaceId: workspaceId,
+        role: 'admin',
+        isActive: true,
+      },
+    });
+
+    return users as SlackUserWithAuth[];
+  }
+
   async delete(id: number): Promise<void> {
     await prisma.slackUser.delete({
       where: {
