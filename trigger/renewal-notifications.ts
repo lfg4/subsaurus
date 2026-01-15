@@ -1,27 +1,27 @@
 import { schedules } from '@trigger.dev/sdk/v3';
 import { getProcessRenewalNotificationsService } from '@/src/shared/container';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export const renewalNotifications = schedules.task({
   id: 'renewal-notifications',
   cron: '0 9 * * *',
   run: async () => {
-    console.log('🦖 Starting renewal notification job', {
-      timestamp: new Date().toISOString(),
-    });
+    logger.info('Starting renewal notification job');
 
     try {
       const service = getProcessRenewalNotificationsService();
       const result = await service.execute();
 
-      console.log('✅ Renewal notifications job completed', result);
+      logger.info('Renewal notifications job completed', {
+        workspaces: result.workspaces,
+        notified: result.notified,
+        renewed: result.renewed,
+        failed: result.failed,
+      });
 
       return result;
     } catch (error) {
-      console.error('❌ Failed to send renewal notifications', {
-        error: error instanceof Error ? error.message : 'Unknown error',
-        stack: error instanceof Error ? error.stack : undefined,
-      });
-
+      logger.error('Failed to send renewal notifications', { error });
       throw error;
     }
   },

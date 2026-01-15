@@ -37,25 +37,31 @@ export class SubscriptionRepository {
     await prisma.subscription.update({
       where: { id: primitives.id },
       data: {
+        name: primitives.name,
+        renewalCycle: primitives.renewalCycle,
         renewalDate: primitives.renewalDate,
         costAmount: primitives.costAmount,
         costCurrency: primitives.costCurrency,
+        project: primitives.projects[0] || null,
+        updatedAt: primitives.updatedAt,
       },
     });
   }
 
-  async updateFields(id: number, data: any): Promise<void> {
-    await prisma.subscription.update({
-      where: { id },
-      data: {
-        ...(data.name !== undefined && { name: data.name }),
-        ...(data.renewalCycle !== undefined && { renewalCycle: data.renewalCycle }),
-        ...(data.renewalDate !== undefined && { renewalDate: data.renewalDate }),
-        ...(data.costAmount !== undefined && { costAmount: data.costAmount }),
-        ...(data.costCurrency !== undefined && { costCurrency: data.costCurrency }),
-        ...(data.projects !== undefined && { project: data.projects[0] || null }),
-      },
+async updateUsersInDatabase(subscriptionId: number, slackWorkspaceId: string, slackUserIds: string[]): Promise<void> {
+    await prisma.subscriptionUser.deleteMany({
+      where: { subscriptionId },
     });
+
+    if (slackUserIds.length > 0) {
+      await prisma.subscriptionUser.createMany({
+        data: slackUserIds.map(userId => ({
+          subscriptionId,
+          slackWorkspaceId,
+          slackUserId: userId,
+        })),
+      });
+    }
   }
 
   async delete(id: number): Promise<void> {

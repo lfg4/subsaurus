@@ -21,6 +21,7 @@ export interface UpdateSubscriptionDTO {
   renewalCycle?: RenewalCycle;
   renewalDate?: string;
   project?: string;
+  slackUserIds?: string[];
 }
 
 export interface ApiResponse<T> {

@@ -12,7 +12,7 @@ interface SidebarProps {
 export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
   const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string }> = [
     { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖' },
-    { id: 'import', label: 'Import CSV/Excel', icon: Upload, emoji: '📤' },
+    { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤' },
     { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅' },
     { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️' }
   ];

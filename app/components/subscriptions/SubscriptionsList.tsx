@@ -6,7 +6,7 @@ import type { Subscription } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
-import { subscriptionsApi } from '@/app/lib/api';
+import { subscriptionsApi, usageChecksApi } from '@/app/lib/api';
 import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
@@ -40,18 +40,30 @@ export function SubscriptionsList({
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewSubscription, setShowNewSubscription] = useState(false);
+  const [usageChecks, setUsageChecks] = useState<any[]>([]);
 
-  useEffect(() => {
-    subscriptionsApi.getAll(workspaceId)
-      .then(data => {
-        setSubscriptions(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        setIsLoading(false);
-      });
-  }, [workspaceId]);
+useEffect(() => {
+  Promise.all([
+    subscriptionsApi.getAll(workspaceId),
+    usageChecksApi.getAll(undefined, workspaceId)
+  ])
+    .then(([subscriptionsData, checksData]) => {
+      setSubscriptions(subscriptionsData);
+      setUsageChecks(Array.isArray(checksData) ? checksData : []);
+      setIsLoading(false);
+    })
+    .catch(() => {
+      setIsLoading(false);
+    });
+}, [workspaceId]);
+
+  const getLastCheck = (subscriptionId: number) => {
+    const subChecks = usageChecks
+      .filter(check => check.subscriptionId === subscriptionId)
+      .sort((a, b) => new Date(b.sendAt).getTime() - new Date(a.sendAt).getTime());
+  
+    return subChecks[0] || null;
+  };
 
   if (isLoading) {
     return (
@@ -70,7 +82,7 @@ export function SubscriptionsList({
       setCurrentPage('subscriptions');
       subscriptionsApi.getAll(workspaceId)
         .then(data => setSubscriptions(data))
-        .catch(err => console.error('Error:', err));
+        .catch(() => {});
     }} 
   />;
 }
@@ -124,8 +136,7 @@ export function SubscriptionsList({
       
       setShowDeleteModal(false);
       setDeleteId(null);
-    } catch (err) {
-      console.error('Error:', err);
+    } catch {
       toast.error('Error deleting subscription');
     }
   };
@@ -281,8 +292,25 @@ export function SubscriptionsList({
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-bold">{sub.slackUserIds?.length || 0}</td>
                   <td className="px-6 py-4">
-                    <span className="text-gray-400 text-sm font-semibold">No checks</span>
-                  </td>
+                    {(() => {
+                      const lastCheck = getLastCheck(sub.id);
+                      if (!lastCheck) {
+                        return <span className="text-gray-400 text-sm font-semibold">No checks</span>;
+                      }
+                      return (
+                        <div className="text-sm">
+                          <div className="font-bold text-gray-900">{formatDate(lastCheck.sendAt)}</div>
+                          <div className={`text-xs font-semibold ${
+                            lastCheck.status === 'SENT' ? 'text-blue-600' :
+                            lastCheck.status === 'CLOSED' ? 'text-gray-500' :
+                            'text-yellow-600'
+                          }`}>
+                             {lastCheck.status}
+                          </div>
+                         </div>
+                       );
+                      })()}
+                    </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 

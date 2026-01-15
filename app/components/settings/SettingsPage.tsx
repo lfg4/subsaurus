@@ -22,8 +22,7 @@ export function SettingsPage({ currentUser }: SettingsPageProps) {
           setDaysBeforeRenewal(settings.daysBeforeRenewal);
           setIsLoading(false);
         })
-        .catch(err => {
-          console.error('Error loading settings:', err);
+        .catch(() => {
           setIsLoading(false);
         });
     } else {
@@ -41,8 +40,7 @@ export function SettingsPage({ currentUser }: SettingsPageProps) {
     try {
       await settingsApi.update(currentUser.slackWorkspaceId, daysBeforeRenewal);
       toast.success('Settings saved successfully');
-    } catch (error) {
-      console.error('Error saving settings:', error);
+    } catch {
       toast.error('Error saving settings');
     } finally {
       setIsSaving(false);

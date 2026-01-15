@@ -22,12 +22,10 @@ export function UsageChecks({ setCurrentPage, setSelectedCheckId, workspaceId }:
   useEffect(() => {
     usageChecksApi.getAll(undefined, workspaceId)
       .then(data => {
-        console.log('API Response:', data);
         setChecks(Array.isArray(data) ? data : []);
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch(() => {
         setChecks([]);
         setIsLoading(false);
       });

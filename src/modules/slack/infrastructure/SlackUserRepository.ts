@@ -74,8 +74,14 @@ export class SlackUserRepository {
       },
     });
 
-    return users.map(u => this.toDomain(u));
-  }
+  return users.map(u => this.toDomain(u));
+}
+
+async findAll(): Promise<SlackUser[]> {
+  const users = await prisma.slackUser.findMany();
+  return users.map(u => this.toDomain(u));
+}
+
 
   async findAdminsByWorkspaceId(workspaceId: string): Promise<SlackUser[]> {
     const users = await prisma.slackUser.findMany({

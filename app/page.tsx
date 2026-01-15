@@ -2,6 +2,8 @@
 
 import { useState, useEffect } from 'react';
 import type { User } from '@/app/types';
+import { authApi } from '@/app/lib/api';
+import { isDevelopmentMode, mockDevUser } from '@/app/lib/dev-mode';
 import { LoginPage } from '@/app/components/auth/LoginPage';
 import { Sidebar } from '@/app/components/layout/Sidebar';
 import { Header } from '@/app/components/layout/Header';
@@ -22,16 +24,24 @@ export default function App() {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then(res => {
-        if (!res.ok) {
-          throw new Error('Not authenticated');
-        }
-        return res.json();
-      })
+    if (isDevelopmentMode) {
+      setCurrentUser(mockDevUser as User);
+      setIsAuthenticated(true);
+      setIsLoading(false);
+      return;
+    }
+
+    authApi.getSession()
       .then(data => {
         if (data.valid && data.user) {
-          setCurrentUser(data.user);
+          setCurrentUser({
+            id: data.user.slackUserId,
+            slackUserId: data.user.slackUserId,
+            slackWorkspaceId: data.user.slackWorkspaceId,
+            displayName: data.user.displayName,
+            email: data.user.email || '',
+            avatarUrl: ''
+          });
           setIsAuthenticated(true);
         } else {
           setIsAuthenticated(false);
@@ -46,9 +56,8 @@ export default function App() {
 
   const handleLogout = async () => {
     try {
-      await fetch('/api/auth/logout', { method: 'POST' });
-    } catch (error) {
-      console.error('Logout error:', error);
+      await authApi.logout();
+    } catch {
     }
     setIsAuthenticated(false);
     setCurrentUser(null);
@@ -88,10 +97,12 @@ export default function App() {
               currentUser={currentUser}
             />
           )}
-          {currentPage === 'subscription-detail' && selectedSubscriptionId && (
-            <SubscriptionDetail 
+          {currentPage === 'subscription-detail' && selectedSubscriptionId && currentUser && (
+            <SubscriptionDetail
               subscriptionId={selectedSubscriptionId}
               setCurrentPage={setCurrentPage}
+              setSelectedCheckId={setSelectedCheckId}
+              currentUser={currentUser}
             />
           )}
           {currentPage === 'checks' && currentUser && (

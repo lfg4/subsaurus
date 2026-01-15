@@ -59,6 +59,7 @@ export async function PATCH(
       price: body.costAmount ? parseFloat(body.costAmount) : undefined,
       currency: body.costCurrency,
       projects: body.project ? [body.project] : undefined,
+      slackUserIds: body.slackUserIds,
     });
 
     return NextResponse.json({ success: true, data: subscription.toPrimitives() });

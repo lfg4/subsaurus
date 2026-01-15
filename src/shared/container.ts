@@ -30,6 +30,7 @@ import { SlackMessageBuilder } from '@/src/modules/slack/infrastructure/SlackMes
 import { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
 import { SlackCommandHandler } from '@/src/modules/slack/application/SlackCommandHandler';
 import { SyncSlackUsersService } from '@/src/modules/slack/application/SyncSlackUsers.service';
+import { GetSlackUsersService } from '@/src/modules/slack/application/GetSlackUsers.service';
 
 import { SlackOAuthClient } from '@/src/modules/auth/infrastructure/SlackOAuthClient';
 import { CryptoTokenGenerator } from '@/src/modules/auth/infrastructure/CryptoTokenGenerator';
@@ -230,9 +231,16 @@ container.register(
 );
 
 
+container.register<GetSlackUsersService>('GetSlackUsersService', () => {
+  const repository = container.resolve<SlackUserRepository>('SlackUserRepository');
+  return new GetSlackUsersService(repository);
+});
+
 container.register(
   'SyncSlackUsersService',
-  () => new SyncSlackUsersService(container.resolve('SlackUserRepository'))
+  () => new SyncSlackUsersService(
+    container.resolve('SlackUserRepository')
+  )
 );
 
 

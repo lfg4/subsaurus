@@ -15,27 +15,22 @@ interface CheckDetailProps {
 }
 
 export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
-  console.log('CheckDetail received checkId:', checkId);  
   const [check, setCheck] = useState<any>(null);
   const [responses, setResponses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSendingReminder, setIsSendingReminder] = useState(false);
 
  useEffect(() => {
-    console.log('Fetching data for checkId:', checkId);
     Promise.all([
       usageChecksApi.getById(checkId),
       usageChecksApi.getResponses(checkId)
     ])
       .then(([checkData, responsesData]) => {
-        console.log('Check data received:', checkData);
-        console.log('Responses data received:', responsesData);
         setCheck(checkData);
         setResponses(Array.isArray(responsesData) ? responsesData : []);
         setIsLoading(false);
       })
-      .catch(err => {
-        console.error('Error:', err);
+      .catch(() => {
         setIsLoading(false);
       });
   }, [checkId]);
@@ -56,8 +51,7 @@ export function CheckDetail({ checkId, setCurrentPage }: CheckDetailProps) {
       } else {
         toast.error(result.message || 'Error sending reminders');
       }
-    } catch (error) {
-      console.error('Error sending reminder:', error);
+    } catch {
       toast.error('Error sending reminders');
     } finally {
       setIsSendingReminder(false);

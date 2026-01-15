@@ -1,15 +1,28 @@
+import { container } from '@/src/shared/container';
+import type { GetSlackUsersService } from '@/src/modules/slack/application/GetSlackUsers.service';
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
 import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
-export async function GET() {
+export async function GET(request: NextRequest) {
   try {
-    const users = await prisma.user.findMany();
-    return NextResponse.json(users);
+    const { searchParams } = new URL(request.url);
+    const workspaceId = searchParams.get('workspaceId');
+
+    if (!workspaceId) {
+      return createValidationError('workspaceId is required');
+    }
+
+    const getSlackUsersService = container.resolve<GetSlackUsersService>('GetSlackUsersService');
+    const users = await getSlackUsersService.execute(workspaceId);
+    const data = users.map(u => u.toPrimitives());
+    
+    return NextResponse.json(data);
   } catch (error) {
-    return handleApiError(error, 'fetch users', 'Failed to fetch users');
+    return handleApiError(error, 'fetch users', 'Failed to fetch slack users');
   }
 }
+
 
 export async function POST(request: NextRequest) {
   try {

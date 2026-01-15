@@ -3,44 +3,26 @@
 import { useState, useEffect } from 'react';
 import { ChevronRight, Plus, X } from 'lucide-react';
 import type { Subscription } from '@/app/types';
+import type { User } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
-import { subscriptionsApi } from '@/app/lib/api';
+import { subscriptionsApi, usageChecksApi, usersApi, type UpdateSubscriptionDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
+import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
 import { toast } from 'sonner';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
 import { UsageCheckStatus } from '@/src/types/enums';
 
-const mockUsageChecks = [
-  {
-    id: 1,
-    subscriptionId: 1,
-    subscriptionName: 'Figma Professional',
-    periodStart: '2025-12-20',
-    periodEnd: '2026-01-20',
-    sendAt: '2026-01-15T10:00:00Z',
-    status: UsageCheckStatus.SENT,
-    responsesCount: 5
-  },
-  {
-    id: 2,
-    subscriptionId: 2,
-    subscriptionName: 'GitHub Teams',
-    periodStart: '2025-12-15',
-    periodEnd: '2026-01-15',
-    sendAt: '2026-01-10T10:00:00Z',
-    status: UsageCheckStatus.SENT,
-    responsesCount: 10
-  }
-];
 
 interface SubscriptionDetailProps {
   subscriptionId: number;
   setCurrentPage: (page: PageType) => void;
+  setSelectedCheckId: (id: number) => void;
+  currentUser: User;
 }
 
-export function SubscriptionDetail({ subscriptionId, setCurrentPage }: SubscriptionDetailProps) {
+export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelectedCheckId, currentUser }: SubscriptionDetailProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -52,41 +34,78 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
     costCurrency: 'EUR'
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [usageChecks, setUsageChecks] = useState<any[]>([]);
+  const [slackUsers, setSlackUsers] = useState<any[]>([]);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
-  useEffect(() => {
-    subscriptionsApi.getById(subscriptionId)
-      .then(data => {
-        setSubscription(data);
-        setFormData({
-          name: data.name,
-          project: data.projects?.[0] || '',
-          renewalCycle: data.renewalCycle,
-          renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
-          costAmount: data.costAmount,
-          costCurrency: data.costCurrency
-        });
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        setIsLoading(false);
+useEffect(() => {
+  Promise.all([
+    subscriptionsApi.getById(subscriptionId),
+    usageChecksApi.getAll(subscriptionId),
+    usersApi.getAll(currentUser.slackWorkspaceId)
+  ])
+    .then(([data, checksData, usersData]) => {
+      setSubscription(data);
+      setFormData({
+        name: data.name,
+        project: data.projects?.[0] || '',
+        renewalCycle: data.renewalCycle,
+        renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
+        costAmount: data.costAmount,
+        costCurrency: data.costCurrency
       });
-  }, [subscriptionId]);
+      setUsageChecks(Array.isArray(checksData) ? checksData : []);
+      setSlackUsers(Array.isArray(usersData) ? usersData : []);
+      setIsLoading(false);
+    })
+    .catch(() => {
+      setIsLoading(false);
+    });
+}, [subscriptionId]);
 
-  const handleSave = async () => {
-    setIsSaving(true);
-    try {
-      await subscriptionsApi.update(subscriptionId, formData);
+const getUserInfo = (slackUserId: string) => {
+  return slackUsers.find(u => u.slackUserId === slackUserId);
+};
 
-      toast.success('Changes saved successfully');
+const handleSave = async () => {
+  setIsSaving(true);
+  try {
+    await subscriptionsApi.update(subscriptionId, formData);
+
+    toast.success('Changes saved successfully');
       setCurrentPage('subscriptions');
-    } catch (error) {
-      console.error('Error:', error);
+    } catch {
       toast.error('Error saving changes');
     } finally {
       setIsSaving(false);
     }
+};
+
+  const handleViewCheck = (checkId: number) => {
+    setSelectedCheckId(checkId);
+    setCurrentPage('check-detail');
   };
+
+const handleAddUsers = async (newUserIds: string[]) => {
+  const updatedUserIds = [
+    ...(subscription?.slackUserIds || []),
+    ...newUserIds.filter(id => !subscription?.slackUserIds?.includes(id))
+  ];
+
+  const updateData: UpdateSubscriptionDTO = {
+    slackUserIds: updatedUserIds
+  };
+
+  await subscriptionsApi.update(subscriptionId, updateData);
+
+  const updatedSubscription = await subscriptionsApi.getById(subscriptionId);
+  setSubscription(updatedSubscription);
+  toast.success('Users added successfully');
+};
+
+const getAvailableUsers = () => {
+  return slackUsers.filter(u => !subscription?.slackUserIds?.includes(u.slackUserId));
+};
 
   if (isLoading) {
     return (
@@ -197,9 +216,9 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
               onChange={(e) => setFormData({...formData, costCurrency: e.target.value})}
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
-              <option value="EUR">💶 EUR</option>
-              <option value="USD">💵 USD</option>
-              <option value="GBP">💷 GBP</option>
+              <option value="EUR">€ EUR</option>
+              <option value="USD">$ USD</option>
+              <option value="GBP">£ GBP</option>
             </select>
           </div>
         </div>
@@ -229,47 +248,50 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
             <span className="text-2xl">👥</span>
             Assigned users ({subscription.slackUserIds?.length || 0})
           </h2>
-          <button type="button" className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition">
-            <Plus className="w-5 h-5" />
-            Add user
-          </button>
+         <button 
+           type="button" 
+            onClick={() => setShowAddUserModal(true)}
+            className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition"
+            >
+             <Plus className="w-5 h-5" />
+              Add user
+            </button>
         </div>
         <div className="space-y-2">
           {subscription.slackUserIds?.length && subscription.slackUserIds?.length > 0 ? (
-            Array.from({ length: subscription.slackUserIds?.length }, (_, i) => (
-              <div key={subscription.slackUserIds[i]} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-black shadow-lg">
-                    U{subscription.slackUserIds[i]}
-                  </div>
-                  <div>
-                    <div className="font-bold text-gray-900">User {i + 1}</div>
-                    <div className="text-sm text-gray-600 font-semibold">user{i + 1}@company.com</div>
+            subscription.slackUserIds.map((userId) => {
+              const user = getUserInfo(userId);
+              if (!user) return null;
+              
+              return (
+                <div key={userId} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
+                  <div className="flex items-center gap-3">
+                    {user.avatarUrl ? (
+                      <img 
+                        src={user.avatarUrl} 
+                        alt={user.displayName || user.email}
+                        className="w-10 h-10 rounded-full shadow-lg"
+                      />
+                    ) : (
+                      <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-black shadow-lg">
+                        {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                      </div>
+                    )}
+                    <div>
+                      <div className="font-bold text-gray-900">{user.displayName || user.email}</div>
+                      <div className="text-sm text-gray-600 font-semibold">{user.email}</div>
+                    </div>
                   </div>
                 </div>
-                {false && (
-                  <div className="flex items-center gap-2">
-                    <span className={`px-3 py-1 text-xs font-black rounded-lg border-2 ${
-                      i % 3 === 0 ? 'bg-green-100 text-green-700 border-green-300' :
-                      i % 3 === 1 ? 'bg-yellow-100 text-yellow-700 border-yellow-300' :
-                      'bg-gray-100 text-gray-600 border-gray-300'
-                    }`}>
-                      {i % 3 === 0 ? '✅ Uses it' : i % 3 === 1 ? '⚠️ Little' : '❌ No response'}
-                    </span>
-                    <button type="button" className="p-2 text-gray-400 hover:text-red-600 transform hover:scale-125 transition">
-                      <X className="w-4 h-4" />
-                    </button>
-                  </div>
-                )}
-              </div>
-            ))
+              );
+            })
           ) : (
             <div className="text-center py-8 text-gray-500 font-semibold">
               No assigned users yet
             </div>
           )}
+          </div>
         </div>
-      </div>
 
       {}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-6 shadow-xl">
@@ -278,7 +300,7 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
           Usage checks history
         </h2>
         <div className="space-y-3">
-          {mockUsageChecks.filter(c => c.subscriptionId === subscriptionId).map(check => (
+          {usageChecks.map(check => (
             <div key={check.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
               <div>
                 <div className="font-bold text-gray-900">
@@ -297,13 +319,17 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
                   {check.status}
                 </span>
                 <span className="text-sm text-gray-600 font-bold">{check.responsesCount} responses</span>
-                <button type="button" className="text-green-600 hover:text-green-700 transform hover:scale-125 transition">
+                <button 
+                  type="button" 
+                 onClick={() => handleViewCheck(check.id)}
+                  className="text-green-600 hover:text-green-700 transform hover:scale-125 transition"
+                >
                   <ChevronRight className="w-5 h-5" />
                 </button>
               </div>
             </div>
           ))}
-          {mockUsageChecks.filter(c => c.subscriptionId === subscriptionId).length === 0 && (
+          {usageChecks.length === 0 && (
             <div className="text-center py-12">
               <div className="text-6xl mb-3">🦖</div>
               <div className="text-gray-500 font-semibold">No usage checks for this subscription</div>
@@ -311,6 +337,12 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage }: Subscript
           )}
         </div>
       </div>
+      <AddUsersModal
+  isOpen={showAddUserModal}
+  onClose={() => setShowAddUserModal(false)}
+  availableUsers={getAvailableUsers()}
+  onAddUsers={handleAddUsers}
+/>
     </div>
   );
 }

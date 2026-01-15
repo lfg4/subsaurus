@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
+import { authApi } from '@/app/lib/api';
 
 export function LoginPage() {
   const [isChecking, setIsChecking] = useState(true);
 
   useEffect(() => {
-    fetch('/api/auth/session')
-      .then(res => res.json())
+    authApi.getSession()
       .then(data => {
         if (data.valid) {
           window.location.href = '/';

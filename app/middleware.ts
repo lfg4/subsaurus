@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import type { NextRequest } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
+import { isDevelopmentMode } from '@/app/lib/dev-mode';
 
 const publicPaths = [
   '/login',
@@ -14,6 +15,10 @@ const publicPaths = [
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl;
+
+  if (isDevelopmentMode) {
+    return NextResponse.next();
+  }
 
   if (publicPaths.some(path => pathname.startsWith(path))) {
     return NextResponse.next();
