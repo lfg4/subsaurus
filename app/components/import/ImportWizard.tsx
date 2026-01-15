@@ -6,7 +6,7 @@ import { ColumnMapper } from './ColumnMapper';
 import { ImportPreview } from './ImportPreview';
 import { ManualSubscriptionSelector } from './ManualSubscriptionSelector';
 import { ParseCSVService } from '@/app/lib/import/ParseCSV.service';
-import { importApi } from '@/app/lib/api';
+import { importApi, type SubscriptionPreview } from '@/app/lib/api';
 
 type Step = 'upload' | 'mapping' | 'manual-select' | 'preview' | 'success' | 'error';
 
@@ -14,16 +14,6 @@ interface Column {
   name: string;
   type: 'date' | 'number' | 'text' | 'unknown';
   sampleValues: string[];
-}
-
-interface SubscriptionPreview {
-  name: string;
-  amount: string;
-  cycle: string;
-  nextRenewal: string;
-  occurrences: number;
-  confidence: string;
-  transactions: Array<{ date: string; amount: number }>;
 }
 
 interface ImportWizardProps {

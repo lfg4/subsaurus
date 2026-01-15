@@ -2,16 +2,7 @@
 
 import { useState } from 'react';
 import {  TrendingUp, Calendar, DollarSign } from 'lucide-react';
-
-interface SubscriptionPreview {
-  name: string;
-  amount: string;
-  cycle: string;
-  nextRenewal: string;
-  occurrences: number;
-  confidence: string;
-  transactions: Array<{ date: string; amount: number }>;
-}
+import type { SubscriptionPreview } from '@/app/lib/api';
 
 interface ImportPreviewProps {
   subscriptions: SubscriptionPreview[];

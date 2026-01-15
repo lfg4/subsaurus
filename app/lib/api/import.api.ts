@@ -8,14 +8,13 @@ export interface TransactionData {
 }
 
 export interface SubscriptionPreview {
-  description: string;
-  amount: number;
-  currency: string;
-  frequency: string;
-  transactionCount: number;
-  lastDate: string;
-  confidence: number;
-  transactions: TransactionData[];
+  name: string;
+  amount: string;
+  cycle: string;
+  nextRenewal: string;
+  occurrences: number;
+  confidence: string;
+  transactions: Array<{ date: string; amount: number }>;
 }
 
 export interface DetectSubscriptionsRequest {
@@ -41,8 +40,7 @@ export interface ConfirmImportRequest {
 export interface ImportResult {
   imported: number;
   skipped: number;
-  failed: number;
-  errors: string[];
+  errors: Array<{ pattern: string; error: string }>;
 }
 
 class ImportApi {
