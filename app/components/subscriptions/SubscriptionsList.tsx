@@ -33,18 +33,31 @@ export function SubscriptionsList({
   const [subscriptions, setSubscriptions] = useState<Subscription[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [showNewSubscription, setShowNewSubscription] = useState(false);
+  const [usageChecks, setUsageChecks] = useState<any[]>([]);
 
-  useEffect(() => {
-    subscriptionsApi.getAll()
-      .then(data => {
-        setSubscriptions(data);
-        setIsLoading(false);
-      })
-      .catch(err => {
-        console.error('Error:', err);
-        setIsLoading(false);
-      });
-  }, []);
+useEffect(() => {
+  Promise.all([
+    subscriptionsApi.getAll(),
+    fetch('/api/usage-checks').then(res => res.json())
+  ])
+    .then(([subscriptionsData, checksData]) => {
+      setSubscriptions(subscriptionsData);
+      setUsageChecks(Array.isArray(checksData) ? checksData : []);
+      setIsLoading(false);
+    })
+    .catch(err => {
+      console.error('Error:', err);
+      setIsLoading(false);
+    });
+}, []);
+
+  const getLastCheck = (subscriptionId: number) => {
+    const subChecks = usageChecks
+      .filter(check => check.subscriptionId === subscriptionId)
+      .sort((a, b) => new Date(b.sendAt).getTime() - new Date(a.sendAt).getTime());
+  
+    return subChecks[0] || null;
+  };
 
   if (isLoading) {
     return (
@@ -273,8 +286,25 @@ export function SubscriptionsList({
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-bold">{sub.slackUserIds?.length || 0}</td>
                   <td className="px-6 py-4">
-                    <span className="text-gray-400 text-sm font-semibold">No checks</span>
-                  </td>
+                    {(() => {
+                      const lastCheck = getLastCheck(sub.id);
+                      if (!lastCheck) {
+                        return <span className="text-gray-400 text-sm font-semibold">No checks</span>;
+                      }
+                      return (
+                        <div className="text-sm">
+                          <div className="font-bold text-gray-900">{formatDate(lastCheck.sendAt)}</div>
+                          <div className={`text-xs font-semibold ${
+                            lastCheck.status === 'SENT' ? 'text-blue-600' :
+                            lastCheck.status === 'CLOSED' ? 'text-gray-500' :
+                            'text-yellow-600'
+                          }`}>
+                             {lastCheck.status}
+                          </div>
+                         </div>
+                       );
+                      })()}
+                    </td>
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 

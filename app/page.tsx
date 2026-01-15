@@ -78,6 +78,7 @@ export default function App() {
             <SubscriptionDetail 
               subscriptionId={selectedSubscriptionId}
               setCurrentPage={setCurrentPage}
+              setSelectedCheckId={setSelectedCheckId}
             />
           )}
           {currentPage === 'checks' && (

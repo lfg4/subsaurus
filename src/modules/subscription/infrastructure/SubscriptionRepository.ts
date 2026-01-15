@@ -61,6 +61,31 @@ export class SubscriptionRepository {
     });
   }
 
+async updateUsers(subscriptionId: number, slackUserIds: string[]): Promise<void> {
+    const subscription = await prisma.subscription.findUnique({
+      where: { id: subscriptionId },
+      select: { slackWorkspaceId: true },
+    });
+
+    if (!subscription) {
+      throw new Error(`Subscription ${subscriptionId} not found`);
+    }
+
+    await prisma.subscriptionUser.deleteMany({
+      where: { subscriptionId },
+    });
+
+    if (slackUserIds.length > 0) {
+      await prisma.subscriptionUser.createMany({
+        data: slackUserIds.map(userId => ({
+          subscriptionId,
+          slackWorkspaceId: subscription.slackWorkspaceId,
+          slackUserId: userId,
+        })),
+      });
+    }
+  }
+
   /**
    * Delete a subscription
    */

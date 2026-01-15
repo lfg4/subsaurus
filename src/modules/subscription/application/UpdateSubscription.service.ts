@@ -13,6 +13,7 @@ export interface UpdateSubscriptionDTO {
   price?: number;
   currency?: string;
   projects?: string[];
+  slackUserIds?: string[];
 }
 
 /**
@@ -58,6 +59,9 @@ export class UpdateSubscriptionService {
       updateData.projects = data.projects;
     }
 
+    if (data.slackUserIds !== undefined) {
+  await this.subscriptionRepository.updateUsers(id, data.slackUserIds);
+    }
     
     await this.subscriptionRepository.updateFields(id, updateData);
 

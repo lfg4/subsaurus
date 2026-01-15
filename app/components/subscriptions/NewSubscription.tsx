@@ -1,9 +1,10 @@
 'use client';
 
-import { useState } from 'react';
-import { ChevronRight } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { ChevronRight, Plus } from 'lucide-react';
 import { subscriptionsApi } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
+import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
 
 type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
 
@@ -21,7 +22,17 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     costCurrency: 'EUR'
   });
   const [isSaving, setIsSaving] = useState(false);
+  const [slackUsers, setSlackUsers] = useState<any[]>([]);
+  const [selectedUserIds, setSelectedUserIds] = useState<string[]>([]);
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
 
+  useEffect(() => {
+    fetch('/api/users')
+      .then(res => res.json())
+      .then(data => setSlackUsers(Array.isArray(data) ? data : []))
+      .catch(err => console.error('Error loading users:', err));
+  }, []);
+  
   const handleCreate = async () => {
     if (!formData.name.trim()) {
       alert('⚠️ Name is required');
@@ -36,7 +47,7 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     try {
       await subscriptionsApi.create({
         ...formData,
-        slackUserIds: ['U091BTTVCQ6']
+        slackUserIds: selectedUserIds.length > 0 ? selectedUserIds : []
       });
 
       alert('✅ Subscription created successfully!');
@@ -47,6 +58,22 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
     } finally {
       setIsSaving(false);
     }
+  };
+
+  const handleAddUsers = async (userIds: string[]) => {
+    setSelectedUserIds([...selectedUserIds, ...userIds.filter(id => !selectedUserIds.includes(id))]);
+  };
+
+  const handleRemoveUser = (userId: string) => {
+    setSelectedUserIds(selectedUserIds.filter(id => id !== userId));
+  };
+
+  const getAvailableUsers = () => {
+    return slackUsers.filter(u => !selectedUserIds.includes(u.slackUserId));
+  };
+
+  const getUserInfo = (userId: string) => {
+    return slackUsers.find(u => u.slackUserId === userId);
   };
 
   return (
@@ -131,11 +158,71 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
             >
               <option value="EUR">€ EUR</option>
-            <option value="USD">$ USD</option>
-            <option value="GBP">£ GBP</option>
+              <option value="USD">$ USD</option>
+              <option value="GBP">£ GBP</option>
             </select>
           </div>
         </div>
+
+        <div className="mt-6 pt-6 border-t-2 border-gray-200">
+          <div className="flex items-center justify-between mb-4">
+            <h3 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+              <span>👥</span>
+              Assigned users ({selectedUserIds.length})
+            </h3>
+            <button
+              type="button"
+              onClick={() => setShowAddUserModal(true)}
+              className="text-green-600 hover:text-green-700 font-bold flex items-center gap-2 bg-green-50 px-4 py-2 rounded-lg border-2 border-green-300 hover:bg-green-100 transition"
+            >
+              <Plus className="w-5 h-5" />
+              Add user
+            </button>
+          </div>
+          
+          <div className="space-y-2">
+            {selectedUserIds.length > 0 ? (
+              selectedUserIds.map(userId => {
+                const user = getUserInfo(userId);
+                if (!user) return null;
+                
+                return (
+                  <div key={userId} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
+                    <div className="flex items-center gap-3">
+                      {user.avatarUrl ? (
+                        <img
+                          src={user.avatarUrl}
+                          alt={user.displayName || user.email}
+                          className="w-10 h-10 rounded-full shadow-lg"
+                        />
+                      ) : (
+                        <div className="w-10 h-10 bg-gradient-to-br from-green-400 to-emerald-500 rounded-full flex items-center justify-center text-white text-sm font-black shadow-lg">
+                          {(user.displayName || user.email || 'U').charAt(0).toUpperCase()}
+                        </div>
+                      )}
+                      <div>
+                        <div className="font-bold text-gray-900">{user.displayName || user.email}</div>
+                        <div className="text-sm text-gray-600 font-semibold">{user.email}</div>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => handleRemoveUser(userId)}
+                      className="text-red-500 hover:text-red-700 font-bold"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                );
+              })
+            ) : (
+              <div className="text-center py-8 text-gray-500 font-semibold">
+                No users assigned yet. Click "Add user" to assign users.
+              </div>
+            )}
+          </div>
+        </div>
+
         <div className="mt-6 flex gap-3">
           <button 
             type="button"
@@ -154,6 +241,13 @@ export function NewSubscription({ setCurrentPage }: NewSubscriptionProps) {
           </button>
         </div>
       </div>
+
+      <AddUsersModal
+        isOpen={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        availableUsers={getAvailableUsers()}
+        onAddUsers={handleAddUsers}
+      />
     </div>
   );
 }

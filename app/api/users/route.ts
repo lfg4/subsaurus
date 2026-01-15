@@ -1,38 +1,18 @@
-import { NextRequest, NextResponse } from 'next/server';
-import { prisma } from '@/src/lib/prisma';
+import { NextResponse } from 'next/server';
+import { container } from '@/src/shared/container';
+import type { GetSlackUsersService } from '@/src/modules/slack/application/GetSlackUsers.service';
 
 export async function GET() {
   try {
-    const users = await prisma.user.findMany();
-    return NextResponse.json(users);
+    const getSlackUsersService = container.resolve<GetSlackUsersService>('GetSlackUsersService');
+    const users = await getSlackUsersService.execute();
+    const data = users.map(u => u.toPrimitives());
+    
+    return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching users:', error);
+    console.error('Error fetching slack users:', error);
     return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
-  }
-}
-
-export async function POST(request: NextRequest) {
-  try {
-    const { email, name } = await request.json();
-
-    if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
-    }
-
-    const user = await prisma.user.create({
-      data: { email, name }
-    });
-    return NextResponse.json(user, { status: 201 });
-  } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
+      { error: 'Failed to fetch slack users' },
       { status: 500 }
     );
   }
