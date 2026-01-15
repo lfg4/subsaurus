@@ -1,7 +1,9 @@
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
-import { DetectSubscriptionsService } from '@/src/modules/import/application/DetectSubscriptions.service';
+import { container } from '@/src/shared/container';
+import type { DetectSubscriptionsService } from '@/src/modules/import/application/DetectSubscriptions.service';
 import { Transaction } from '@/src/modules/import/domain/Transaction';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 interface TransactionData {
   date: string;
@@ -16,10 +18,7 @@ export async function POST(request: NextRequest) {
     const { transactions } = body as { transactions: TransactionData[] };
 
     if (!transactions || !Array.isArray(transactions)) {
-      return NextResponse.json(
-        { error: 'Missing transactions array' },
-        { status: 400 }
-      );
+      return createValidationError('Missing transactions array');
     }
 
     const txObjects = transactions.map(tx => 
@@ -32,20 +31,14 @@ export async function POST(request: NextRequest) {
       })
     );
 
-    const detector = new DetectSubscriptionsService();
+    const detector = container.resolve<DetectSubscriptionsService>('DetectSubscriptionsService');
     const allPatterns = await detector.detectPatterns(txObjects);
     const likelyPatterns = detector.filterLikelySubscriptions(allPatterns);
     const previews = likelyPatterns.map(pattern => pattern.toPreview());
 
     return NextResponse.json({ previews });
   } catch (error) {
-    console.error('Error detecting subscriptions:', error);
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Error detecting subscriptions' 
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'detect subscriptions', 'Error detecting subscriptions');
   }
 }
 

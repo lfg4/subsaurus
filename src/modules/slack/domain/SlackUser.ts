@@ -2,6 +2,8 @@ import { Entity } from '@/src/shared/domain/Entity';
 
 export type UserRole = 'admin' | 'user';
 
+const VALID_ROLES: readonly UserRole[] = ['admin', 'user'] as const;
+
 export class SlackUser extends Entity<number> {
   private constructor(
     id: number,
@@ -15,6 +17,27 @@ export class SlackUser extends Entity<number> {
     public readonly createdAt: Date
   ) {
     super(id);
+    this.validateRole(role);
+    this.validateSlackUserId(slackUserId);
+    this.validateSlackWorkspaceId(slackWorkspaceId);
+  }
+
+  private validateRole(role: string): void {
+    if (!VALID_ROLES.includes(role as UserRole)) {
+      throw new Error(`Invalid user role: ${role}. Must be one of: ${VALID_ROLES.join(', ')}`);
+    }
+  }
+
+  private validateSlackUserId(slackUserId: string): void {
+    if (!slackUserId || slackUserId.trim().length === 0) {
+      throw new Error('Slack User ID cannot be empty');
+    }
+  }
+
+  private validateSlackWorkspaceId(workspaceId: string): void {
+    if (!workspaceId || workspaceId.trim().length === 0) {
+      throw new Error('Slack Workspace ID cannot be empty');
+    }
   }
 
   

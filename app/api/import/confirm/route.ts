@@ -3,6 +3,7 @@ import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { ImportSubscriptionsService } from '@/src/modules/import/application/ImportSubscriptions.service';
 import type { SubscriptionPreview } from '@/src/modules/import/application/ImportSubscriptions.service';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -18,10 +19,7 @@ export async function POST(request: NextRequest) {
     };
 
     if (!patterns || !options) {
-      return NextResponse.json(
-        { error: 'Missing required parameters' },
-        { status: 400 }
-      );
+      return createValidationError('Missing required parameters');
     }
 
     const importService = container.resolve<ImportSubscriptionsService>(
@@ -32,12 +30,6 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error importing subscriptions:', error);
-    return NextResponse.json(
-      { 
-        error: error instanceof Error ? error.message : 'Error importing subscriptions' 
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'import subscriptions', 'Error importing subscriptions');
   }
 }

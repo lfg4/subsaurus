@@ -1,20 +1,16 @@
 import type { SessionRepository } from '../infrastructure/SessionRepository';
 import type { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
-import type { SlackUser } from '@/src/modules/slack/domain/SlackUser';
-
-export interface ValidateSessionResultDTO {
-  valid: boolean;
-  user?: {
-    id: string;
-    slackUserId: string;
-    slackWorkspaceId: string;
-    displayName: string | null;
-    email: string | null;
-    avatarUrl: string | null;
-    role: string;
-  };
-  error?: string;
-}
+import { UserMapper } from './mappers/UserMapper';
+import type { ValidateSessionResultDTO } from './dtos/ValidateSessionResult.dto';
+import {
+  SessionNotFoundException,
+  SessionExpiredException,
+  UserNotRegisteredException,
+  UserInactiveException,
+  AdminRoleRequiredException,
+  type AuthException,
+} from '../domain/exceptions/AuthException';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export class ValidateSessionService {
   constructor(
@@ -27,44 +23,52 @@ export class ValidateSessionService {
       const session = await this.sessionRepository.findByToken(token);
 
       if (!session) {
-        return {
-          valid: false,
-          error: 'Session not found or expired',
-        };
+        throw new SessionNotFoundException();
+      }
+
+      if (session.isExpired()) {
+        await this.sessionRepository.delete(session.id);
+        throw new SessionExpiredException();
       }
 
       const user = await this.slackUserRepository.findBySlackUserId(session.slackUserId);
 
       if (!user) {
         await this.sessionRepository.delete(session.id);
-        return {
-          valid: false,
-          error: 'User not found',
-        };
+        throw new UserNotRegisteredException(session.slackUserId);
       }
 
-      if (!user.canLogin()) {
+      if (!user.isUserActive()) {
         await this.sessionRepository.delete(session.id);
-        
-        if (!user.isUserActive()) {
-          return {
-            valid: false,
-            error: 'User account is disabled',
-          };
-        }
-        
-        return {
-          valid: false,
-          error: 'User is no longer an admin',
-        };
+        throw new UserInactiveException(session.slackUserId);
+      }
+
+      if (!user.isAdmin()) {
+        await this.sessionRepository.delete(session.id);
+        throw new AdminRoleRequiredException(session.slackUserId);
       }
 
       return {
         valid: true,
-        user: this.toUserDTO(user),
+        user: UserMapper.toDTO(user),
       };
     } catch (error) {
-      console.error('❌ Session validation error:', error);
+      if (this.isAuthException(error)) {
+        logger.debug('Session validation failed', {
+          code: error.code,
+          message: error.message,
+        });
+
+        return {
+          valid: false,
+          error: error.message,
+        };
+      }
+
+      logger.error('Unexpected session validation error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       return {
         valid: false,
         error: 'Validation error',
@@ -72,16 +76,7 @@ export class ValidateSessionService {
     }
   }
 
-  private toUserDTO(user: SlackUser) {
-    const primitives = user.toPrimitives();
-    return {
-      id: primitives.id.toString(),
-      slackUserId: primitives.slackUserId,
-      slackWorkspaceId: primitives.slackWorkspaceId,
-      displayName: primitives.displayName,
-      email: primitives.email,
-      avatarUrl: primitives.avatarUrl,
-      role: primitives.role,
-    };
+  private isAuthException(error: unknown): error is AuthException {
+    return error instanceof Error && 'code' in error;
   }
 }

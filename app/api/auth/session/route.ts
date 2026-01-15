@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { container } from '@/src/shared/container';
 import type { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
+import { handleApiError, createUnauthorizedError } from '@/app/lib/api-error-handler';
 
 export async function GET() {
   try {
@@ -9,10 +10,7 @@ export async function GET() {
     const token = cookieStore.get('subsaurus_session')?.value;
 
     if (!token) {
-      return NextResponse.json(
-        { valid: false, error: 'No session found' },
-        { status: 401 }
-      );
+      return createUnauthorizedError('No session found');
     }
 
     const validateSessionService = container.resolve<ValidateSessionService>(
@@ -43,11 +41,7 @@ export async function GET() {
       },
     });
   } catch (error) {
-    console.error('Error validating session:', error);
-    return NextResponse.json(
-      { valid: false, error: 'Validation error' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'validate session', 'Validation error');
   }
 }
 

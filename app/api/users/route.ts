@@ -1,16 +1,13 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { prisma } from '@/src/lib/prisma';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 export async function GET() {
   try {
     const users = await prisma.user.findMany();
     return NextResponse.json(users);
   } catch (error) {
-    console.error('Error fetching users:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch users' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch users', 'Failed to fetch users');
   }
 }
 
@@ -19,10 +16,7 @@ export async function POST(request: NextRequest) {
     const { email, name } = await request.json();
 
     if (!email) {
-      return NextResponse.json(
-        { error: 'Email is required' },
-        { status: 400 }
-      );
+      return createValidationError('Email is required');
     }
 
     const user = await prisma.user.create({
@@ -30,10 +24,6 @@ export async function POST(request: NextRequest) {
     });
     return NextResponse.json(user, { status: 201 });
   } catch (error) {
-    console.error('Error creating user:', error);
-    return NextResponse.json(
-      { error: 'Failed to create user' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'create user', 'Failed to create user');
   }
 }

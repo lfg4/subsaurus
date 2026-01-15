@@ -1,4 +1,5 @@
 import { NextResponse } from 'next/server';
+import { handleApiError } from '@/app/lib/api-error-handler';
 
 export async function GET() {
   try {
@@ -28,11 +29,7 @@ export async function GET() {
 
     return NextResponse.redirect(authUrl.toString());
   } catch (error) {
-    console.error('Error starting OAuth flow:', error);
-    return NextResponse.json(
-      { error: 'Failed to start authentication' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'start OAuth flow', 'Failed to start authentication');
   }
 }
 

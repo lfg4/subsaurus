@@ -1,6 +1,7 @@
 import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
 import type { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
 import type { SendRenewalNotificationService } from '@/src/modules/usage-tracking/application/SendRenewalNotification.service';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export interface ProcessRenewalNotificationsResult {
   success: boolean;
@@ -21,12 +22,12 @@ export class ProcessRenewalNotificationsService {
   ) {}
 
   async execute(): Promise<ProcessRenewalNotificationsResult> {
-    console.log('🦖 Processing renewal notifications for all workspaces');
+    logger.info('Processing renewal notifications for all workspaces');
 
     const workspaceIds = await this.settingsRepository.getAllWorkspaceIds();
 
     if (workspaceIds.length === 0) {
-      console.log('ℹ️ No active workspaces found');
+      logger.info('No active workspaces found');
       return {
         success: true,
         workspaces: 0,
@@ -38,7 +39,7 @@ export class ProcessRenewalNotificationsService {
       };
     }
 
-    console.log(`📋 Found ${workspaceIds.length} active workspace(s)`);
+    logger.info('Found active workspaces', { count: workspaceIds.length });
 
     let totalNotified = 0;
     let totalRenewed = 0;
@@ -48,7 +49,7 @@ export class ProcessRenewalNotificationsService {
       try {
         const adminSlackUserId = await this.getAdminUserForWorkspace(workspaceId);
         
-        console.log(`👤 Processing workspace ${workspaceId} with admin ${adminSlackUserId}`);
+        logger.info('Processing workspace', { workspaceId, adminSlackUserId });
         
         const result = await this.sendRenewalNotificationService.execute(adminSlackUserId);
         
@@ -56,13 +57,15 @@ export class ProcessRenewalNotificationsService {
         totalRenewed += result.renewed;
         totalFailed += result.failed;
 
-        console.log(`✅ Workspace ${workspaceId} completed:`, {
+        logger.info('Workspace processing completed', {
+          workspaceId,
           notified: result.notified,
           renewed: result.renewed,
           failed: result.failed,
         });
       } catch (error) {
-        console.error(`❌ Error processing workspace ${workspaceId}:`, {
+        logger.error('Error processing workspace', {
+          workspaceId,
           error: error instanceof Error ? error.message : 'Unknown error',
         });
         totalFailed++;

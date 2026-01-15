@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { container } from '@/src/shared/container';
 import type { SessionRepository } from '@/src/modules/auth/infrastructure/SessionRepository';
+import { handleApiError } from '@/app/lib/api-error-handler';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export async function POST() {
   try {
@@ -14,7 +16,7 @@ export async function POST() {
       try {
         await sessionRepository.deleteByToken(token);
       } catch (error) {
-        console.log('Session already deleted or not found');
+        logger.debug('Session already deleted or not found', { token: token.substring(0, 8) + '...' });
       }
     }
 
@@ -22,11 +24,7 @@ export async function POST() {
 
     return NextResponse.json({ success: true });
   } catch (error) {
-    console.error('Error during logout:', error);
-    return NextResponse.json(
-      { error: 'Logout failed' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'logout', 'Logout failed');
   }
 }
 

@@ -1,6 +1,7 @@
 import { getSlackCommandHandler } from '@/src/shared/container';
 import type { NextRequest } from 'next/server';
 import { NextResponse } from 'next/server';
+import { handleApiError } from '@/app/lib/api-error-handler';
 
 export async function POST(request: NextRequest) {
   try {
@@ -28,10 +29,6 @@ export async function POST(request: NextRequest) {
 
     return response;
   } catch (error) {
-    console.error('❌ Error on Slack webhook:', error);
-    return NextResponse.json(
-      { error: 'Error processing Slack webhook' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'Slack webhook', 'Error processing Slack webhook');
   }
 }

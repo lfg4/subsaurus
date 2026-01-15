@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { GetUsageResponsesByCheckService } from '@/src/modules/usage-tracking/application/GetUsageResponsesByCheck.service';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 export async function GET(
   _request: Request,
@@ -11,10 +12,7 @@ export async function GET(
     const usageCheckId = parseInt(idStr);
 
     if (Number.isNaN(usageCheckId)) {
-      return NextResponse.json(
-        { error: 'Invalid usage check ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid usage check ID');
     }
 
     const getUsageResponsesByCheckService = container.resolve<GetUsageResponsesByCheckService>(
@@ -26,10 +24,6 @@ export async function GET(
 
     return NextResponse.json(data);
   } catch (error) {
-    console.error('Error fetching usage responses:', error);
-    return NextResponse.json(
-      { error: 'Failed to load usage responses' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch usage responses', 'Failed to load usage responses');
   }
 }

@@ -1,4 +1,5 @@
 import type { SubscriptionRepository } from '../infrastructure/SubscriptionRepository';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 /**
  * Application Service: Delete Subscription Use Case
@@ -19,7 +20,7 @@ export class DeleteSubscriptionService {
     
     await this.subscriptionRepository.delete(id);
 
-    console.log(`✅ Deleted subscription ${id}: ${subscription.name}`);
+    logger.info('Subscription deleted', { id, name: subscription.name });
   }
 }
 

@@ -1,23 +1,13 @@
 import { prisma } from '@/src/lib/prisma';
-import { randomBytes } from 'crypto';
 import { Session } from '../domain/Session';
 
 export class SessionRepository {
-  async create(slackUserId: string, slackWorkspaceId: string, expiresInDays: number = 7): Promise<Session> {
-    const token = this.generateToken();
-    const id = randomBytes(16).toString('hex');
-
-    const sessionData = await prisma.session.create({
-      data: {
-        id,
-        slackUserId,
-        slackWorkspaceId,
-        token,
-        expiresAt: new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000),
-      },
+  async save(session: Session): Promise<void> {
+    const primitives = session.toPrimitives();
+    
+    await prisma.session.create({
+      data: primitives,
     });
-
-    return Session.fromPrimitives(sessionData);
   }
 
   async findByToken(token: string): Promise<Session | null> {
@@ -27,14 +17,7 @@ export class SessionRepository {
 
     if (!sessionData) return null;
 
-    const session = Session.fromPrimitives(sessionData);
-
-    if (session.isExpired()) {
-      await this.delete(session.id);
-      return null;
-    }
-
-    return session;
+    return Session.fromPrimitives(sessionData);
   }
 
   async delete(id: string): Promise<void> {
@@ -65,10 +48,6 @@ export class SessionRepository {
     await prisma.session.deleteMany({
       where: { slackUserId },
     });
-  }
-
-  private generateToken(): string {
-    return randomBytes(32).toString('hex');
   }
 }
 

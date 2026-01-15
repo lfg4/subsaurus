@@ -13,6 +13,7 @@ import { GetSubscriptionByIdService } from '@/src/modules/subscription/applicati
 import { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
 import { DeleteSubscriptionService } from '@/src/modules/subscription/application/DeleteSubscription.service';
 import { ImportSubscriptionsService } from '@/src/modules/import/application/ImportSubscriptions.service';
+import { DetectSubscriptionsService } from '@/src/modules/import/application/DetectSubscriptions.service';
 
 
 import { SendUsageCheckService } from '@/src/modules/usage-tracking/application/SendUsageCheck.service';
@@ -31,6 +32,7 @@ import { SlackCommandHandler } from '@/src/modules/slack/application/SlackComman
 import { SyncSlackUsersService } from '@/src/modules/slack/application/SyncSlackUsers.service';
 
 import { SlackOAuthClient } from '@/src/modules/auth/infrastructure/SlackOAuthClient';
+import { CryptoTokenGenerator } from '@/src/modules/auth/infrastructure/CryptoTokenGenerator';
 import { AuthenticateUserService } from '@/src/modules/auth/application/AuthenticateUser.service';
 import { ValidateSessionService } from '@/src/modules/auth/application/ValidateSession.service';
 import { ProcessRenewalNotificationsService } from '@/src/modules/subscription/application/ProcessRenewalNotifications.service';
@@ -42,14 +44,15 @@ type Factory<T = unknown> = () => T;
  * Manages singletons for the application
  */
 class Container {
-  private instances = new Map<string, Factory | unknown>();
+  private factories = new Map<string, Factory>();
+  private instances = new Map<string, unknown>();
 
   /**
    * Register a factory function
    */
-  register<T>(key: string, factory: () => T): void {
-    if (!this.instances.has(key)) {
-      this.instances.set(key, factory);
+  register<T>(key: string, factory: Factory<T>): void {
+    if (!this.factories.has(key)) {
+      this.factories.set(key, factory as Factory);
     }
   }
 
@@ -57,35 +60,29 @@ class Container {
    * Resolve and get instance (singleton)
    */
   resolve<T>(key: string): T {
-    const factory = this.instances.get(key);
+    // Return existing instance if already created
+    if (this.instances.has(key)) {
+      return this.instances.get(key) as T;
+    }
+
+    // Get factory
+    const factory = this.factories.get(key);
     if (!factory) {
       throw new Error(`Service "${key}" not registered in container`);
     }
 
-    
-    const instanceKey = `_instance_${key}`;
-    if (!this.instances.has(instanceKey)) {
-      
-      this.instances.set(instanceKey, (factory as Factory)());
-    }
+    // Create and cache instance
+    const instance = factory();
+    this.instances.set(key, instance);
 
-    return this.instances.get(instanceKey) as T;
+    return instance as T;
   }
 
   /**
    * Clear all instances (useful for testing)
    */
   clear(): void {
-    
-    const keysToDelete: string[] = [];
-    for (const key of this.instances.keys()) {
-      if (key.startsWith('_instance_')) {
-        keysToDelete.push(key);
-      }
-    }
-    for (const key of keysToDelete) {
-      this.instances.delete(key);
-    }
+    this.instances.clear();
   }
 }
 
@@ -104,6 +101,7 @@ container.register('SlackClient', () => new SlackClient());
 container.register('SlackMessageBuilder', () => new SlackMessageBuilder());
 container.register('SlackUserRepository', () => new SlackUserRepository());
 container.register('SlackOAuthClient', () => SlackOAuthClient.fromEnvironment());
+container.register('TokenGenerator', () => new CryptoTokenGenerator());
 
 
 container.register(
@@ -149,6 +147,11 @@ container.register(
 container.register(
   'ImportSubscriptionsService',
   () => new ImportSubscriptionsService(container.resolve('SubscriptionRepository'))
+);
+
+container.register(
+  'DetectSubscriptionsService',
+  () => new DetectSubscriptionsService()
 );
 
 
@@ -240,7 +243,8 @@ container.register(
       container.resolve('SessionRepository'),
       container.resolve('SlackUserRepository'),
       container.resolve('SettingsRepository'),
-      container.resolve('SlackOAuthClient')
+      container.resolve('SlackOAuthClient'),
+      container.resolve('TokenGenerator')
     )
 );
 
@@ -286,6 +290,11 @@ export const getUpdateSubscriptionService = () =>
   container.resolve<UpdateSubscriptionService>('UpdateSubscriptionService');
 export const getDeleteSubscriptionService = () =>
   container.resolve<DeleteSubscriptionService>('DeleteSubscriptionService');
+
+export const getImportSubscriptionsService = () =>
+  container.resolve<ImportSubscriptionsService>('ImportSubscriptionsService');
+export const getDetectSubscriptionsService = () =>
+  container.resolve<DetectSubscriptionsService>('DetectSubscriptionsService');
 
 export const getGetUsageCheckByIdService = () =>
   container.resolve<GetUsageCheckByIdService>('GetUsageCheckByIdService');

@@ -2,114 +2,71 @@ import type { SessionRepository } from '../infrastructure/SessionRepository';
 import type { SlackUserRepository } from '@/src/modules/slack/infrastructure/SlackUserRepository';
 import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
 import type { SlackOAuthPort } from '../domain/ports/SlackOAuthPort';
-import type { SlackUser } from '@/src/modules/slack/domain/SlackUser';
-
-export interface AuthResultDTO {
-  success: boolean;
-  sessionToken?: string;
-  user?: {
-    id: string;
-    slackUserId: string;
-    slackWorkspaceId: string;
-    displayName: string | null;
-    email: string | null;
-    avatarUrl: string | null;
-    role: string;
-  };
-  error?: string;
-  message?: string;
-}
+import type { TokenGenerator } from '../domain/services/TokenGenerator';
+import { Session } from '../domain/Session';
+import { UserMapper } from './mappers/UserMapper';
+import type { AuthResultDTO } from './dtos/AuthResult.dto';
+import {
+  OAuthFailedException,
+  UserInfoFailedException,
+  WorkspaceNotRegisteredException,
+  WorkspaceInactiveException,
+  UserNotRegisteredException,
+  UserInactiveException,
+  AdminRoleRequiredException,
+  type AuthException,
+} from '../domain/exceptions/AuthException';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export class AuthenticateUserService {
   constructor(
     private readonly sessionRepository: SessionRepository,
     private readonly slackUserRepository: SlackUserRepository,
     private readonly settingsRepository: SettingsRepository,
-    private readonly slackOAuthClient: SlackOAuthPort
+    private readonly slackOAuthClient: SlackOAuthPort,
+    private readonly tokenGenerator: TokenGenerator
   ) {}
 
   async execute(code: string): Promise<AuthResultDTO> {
     try {
-      const oauthResponse = await this.slackOAuthClient.exchangeCodeForToken(code);
+      const { slackUserId, workspaceId } = await this.authenticateWithSlack(code);
+      await this.validateWorkspaceAccess(workspaceId);
+      const user = await this.validateUserAccess(slackUserId);
       
-      if (!oauthResponse.ok || !oauthResponse.authed_user?.access_token) {
-        return {
-          success: false,
-          error: 'oauth_failed',
-          message: 'Failed to authenticate with Slack',
-        };
-      }
-
-      const userInfo = await this.slackOAuthClient.getUserInfo(oauthResponse.authed_user.access_token);
-      
-      if (!userInfo.ok || !userInfo.userId || !userInfo.teamId) {
-        return {
-          success: false,
-          error: 'user_info_failed',
-          message: 'Failed to get user information from Slack',
-        };
-      }
-
-      const slackUserId = userInfo.userId;
-      const workspaceId = userInfo.teamId;
-
-      const workspace = await this.settingsRepository.findByWorkspace(workspaceId);
-      
-      if (!workspace) {
-        return {
-          success: false,
-          error: 'workspace_not_found',
-          message: 'Your Slack workspace is not registered in Subsaurus. Contact your organization admin.',
-        };
-      }
-
-      if (!workspace.isWorkspaceActive()) {
-        return {
-          success: false,
-          error: 'workspace_inactive',
-          message: 'Your workspace access has been disabled. Contact support.',
-        };
-      }
-
-      const user = await this.slackUserRepository.findBySlackUserId(slackUserId);
-      
-      if (!user) {
-        return {
-          success: false,
-          error: 'user_not_found',
-          message: 'User not registered. Contact your workspace admin.',
-        };
-      }
-
-      if (!user.canLogin()) {
-        if (!user.isUserActive()) {
-          return {
-            success: false,
-            error: 'user_inactive',
-            message: 'Your account has been disabled. Contact support.',
-          };
-        }
-        
-        return {
-          success: false,
-          error: 'admin_required',
-          message: 'Only workspace admins can access Subsaurus. Contact your admin to request access.',
-        };
-      }
-
       await this.sessionRepository.deleteByUserId(slackUserId);
 
-      const session = await this.sessionRepository.create(slackUserId, workspaceId, 7);
+      const session = Session.create(slackUserId, workspaceId, this.tokenGenerator);
+      await this.sessionRepository.save(session);
 
-      console.log(`✅ User authenticated: ${slackUserId} from workspace ${workspaceId}`);
+      logger.info('User authenticated successfully', {
+        slackUserId,
+        workspaceId,
+        role: user.toPrimitives().role,
+      });
 
       return {
         success: true,
         sessionToken: session.token,
-        user: this.toUserDTO(user),
+        user: UserMapper.toDTO(user),
       };
     } catch (error) {
-      console.error('❌ Authentication error:', error);
+      if (this.isAuthException(error)) {
+        logger.warn('Authentication failed', {
+          code: error.code,
+          message: error.message,
+        });
+
+        return {
+          success: false,
+          error: error.code,
+          message: error.message,
+        };
+      }
+
+      logger.error('Unexpected authentication error', {
+        error: error instanceof Error ? error.message : String(error),
+      });
+
       return {
         success: false,
         error: 'internal_error',
@@ -118,17 +75,57 @@ export class AuthenticateUserService {
     }
   }
 
-  private toUserDTO(user: SlackUser) {
-    const primitives = user.toPrimitives();
+  private async authenticateWithSlack(code: string): Promise<{ slackUserId: string; workspaceId: string }> {
+    const oauthResponse = await this.slackOAuthClient.exchangeCodeForToken(code);
+    
+    if (!oauthResponse.ok || !oauthResponse.authed_user?.access_token) {
+      throw new OAuthFailedException();
+    }
+
+    const userInfo = await this.slackOAuthClient.getUserInfo(oauthResponse.authed_user.access_token);
+    
+    if (!userInfo.ok || !userInfo.userId || !userInfo.teamId) {
+      throw new UserInfoFailedException();
+    }
+
     return {
-      id: primitives.id.toString(),
-      slackUserId: primitives.slackUserId,
-      slackWorkspaceId: primitives.slackWorkspaceId,
-      displayName: primitives.displayName,
-      email: primitives.email,
-      avatarUrl: primitives.avatarUrl,
-      role: primitives.role,
+      slackUserId: userInfo.userId,
+      workspaceId: userInfo.teamId,
     };
+  }
+
+  private async validateWorkspaceAccess(workspaceId: string): Promise<void> {
+    const workspace = await this.settingsRepository.findByWorkspace(workspaceId);
+    
+    if (!workspace) {
+      throw new WorkspaceNotRegisteredException(workspaceId);
+    }
+
+    if (!workspace.isWorkspaceActive()) {
+      throw new WorkspaceInactiveException(workspaceId);
+    }
+  }
+
+  private async validateUserAccess(slackUserId: string) {
+    const user = await this.slackUserRepository.findBySlackUserId(slackUserId);
+    
+    if (!user) {
+      throw new UserNotRegisteredException(slackUserId);
+    }
+
+    if (!user.isUserActive()) {
+      throw new UserInactiveException(slackUserId);
+    }
+
+    if (!user.isAdmin()) {
+      throw new AdminRoleRequiredException(slackUserId);
+    }
+
+    return user;
+  }
+
+  private isAuthException(error: unknown): error is AuthException {
+    return error instanceof Error && 'code' in error;
   }
 }
 

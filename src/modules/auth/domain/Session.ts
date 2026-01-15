@@ -1,3 +1,7 @@
+import type { TokenGenerator } from './services/TokenGenerator';
+import { AUTH_CONSTANTS } from './constants/AuthConstants';
+import { randomBytes } from 'crypto';
+
 export interface SessionPrimitives {
   id: string;
   slackUserId: string;
@@ -50,14 +54,14 @@ export class Session {
   }
 
   static create(
-    id: string,
     slackUserId: string,
     slackWorkspaceId: string,
-    token: string,
-    expiresInDays: number
+    tokenGenerator: TokenGenerator,
+    expiresInDays: number = AUTH_CONSTANTS.DEFAULT_SESSION_DURATION_DAYS
   ): Session {
-    const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + expiresInDays);
+    const id = randomBytes(16).toString('hex');
+    const token = tokenGenerator.generate();
+    const expiresAt = new Date(Date.now() + expiresInDays * 24 * 60 * 60 * 1000);
     const createdAt = new Date();
 
     return new Session(id, slackUserId, slackWorkspaceId, token, expiresAt, createdAt);

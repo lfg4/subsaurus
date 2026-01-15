@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { ReSendUsageCheckService } from '@/src/modules/usage-tracking/application/ReSendUsageCheck.service';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 export async function POST(
   _request: Request,
@@ -11,10 +12,7 @@ export async function POST(
     const id = parseInt(idStr);
 
     if (Number.isNaN(id)) {
-      return NextResponse.json(
-        { error: 'Invalid ID' },
-        { status: 400 }
-      );
+      return createValidationError('Invalid ID');
     }
 
     const reSendUsageCheckService = container.resolve<ReSendUsageCheckService>('ReSendUsageCheckService');
@@ -30,14 +28,7 @@ export async function POST(
 
     return NextResponse.json(result);
   } catch (error) {
-    console.error('Error resending usage check:', error);
-    return NextResponse.json(
-      { 
-        error: 'Failed to resend usage check',
-        details: error instanceof Error ? error.message : 'Unknown error'
-      },
-      { status: 500 }
-    );
+    return handleApiError(error, 'resend usage check', 'Failed to resend usage check');
   }
 }
 

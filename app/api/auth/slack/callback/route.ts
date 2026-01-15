@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { AuthenticateUserService } from '@/src/modules/auth/application/AuthenticateUser.service';
 import { cookies } from 'next/headers';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 export async function GET(request: Request) {
   try {
@@ -47,7 +48,9 @@ export async function GET(request: Request) {
 
     return response;
   } catch (error) {
-    console.error('Error in OAuth callback:', error);
+    logger.error('Error in OAuth callback', {
+      error: error instanceof Error ? error.message : String(error),
+    });
     return NextResponse.redirect(
       new URL(`/login?error=server_error`, request.url)
     );

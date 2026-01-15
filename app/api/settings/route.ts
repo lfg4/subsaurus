@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { container } from '@/src/shared/container';
 import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import { handleApiError, createValidationError } from '@/app/lib/api-error-handler';
 
 export async function GET(request: Request) {
   try {
@@ -19,11 +20,7 @@ export async function GET(request: Request) {
 
     return NextResponse.json(settings || { daysBeforeRenewal: 7 });
   } catch (error) {
-    console.error('Error fetching settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to fetch settings' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'fetch settings', 'Failed to fetch settings');
   }
 }
 
@@ -33,17 +30,11 @@ export async function POST(request: Request) {
     const { workspaceId, daysBeforeRenewal } = body;
 
     if (!workspaceId) {
-      return NextResponse.json(
-        { error: 'Workspace ID is required' },
-        { status: 400 }
-      );
+      return createValidationError('Workspace ID is required');
     }
 
     if (!daysBeforeRenewal || daysBeforeRenewal < 1 || daysBeforeRenewal > 60) {
-      return NextResponse.json(
-        { error: 'Days before renewal must be between 1 and 60' },
-        { status: 400 }
-      );
+      return createValidationError('Days before renewal must be between 1 and 60');
     }
 
     const settingsRepository = container.resolve<SettingsRepository>('SettingsRepository');
@@ -51,11 +42,7 @@ export async function POST(request: Request) {
 
     return NextResponse.json(settings);
   } catch (error) {
-    console.error('Error saving settings:', error);
-    return NextResponse.json(
-      { error: 'Failed to save settings' },
-      { status: 500 }
-    );
+    return handleApiError(error, 'save settings', 'Failed to save settings');
   }
 }
 

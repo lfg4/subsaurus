@@ -3,6 +3,7 @@ import type { UsageResponseRepository } from '../infrastructure/UsageResponseRep
 import type { SubscriptionRepository } from '@/src/modules/subscription/infrastructure/SubscriptionRepository';
 import type { SlackClient } from '@/src/modules/slack/infrastructure/SlackClient';
 import type { SlackMessageBuilder } from '@/src/modules/slack/infrastructure/SlackMessageBuilder';
+import { logger } from '@/src/shared/infrastructure/Logger';
 
 
 export interface ReSendUsageCheckResult {
@@ -97,10 +98,13 @@ export class ReSendUsageCheckService {
       for (const userId of pendingUserIds) {
         try {
           await this.slackClient.sendMessage(userId, message);
-          console.log(`📤 Reminder sent to user ${userId} for check ${checkId}`);
+          logger.debug('Reminder sent to user', { userId, checkId });
           sent++;
         } catch (error) {
-          console.error(`❌ Failed to send reminder to user ${userId}:`, error);
+          logger.error('Failed to send reminder to user', {
+            userId,
+            error: error instanceof Error ? error.message : String(error),
+          });
           failed++;
         }
       }
@@ -113,7 +117,10 @@ export class ReSendUsageCheckService {
         message: 'Reminders sent successfully',
       };
     } catch (error) {
-      console.error(`❌ Error processing check ${checkId}:`, error);
+      logger.error('Error processing check', {
+        checkId,
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
@@ -127,7 +134,7 @@ export class ReSendUsageCheckService {
         daysBeforeEnd
       );
 
-      console.log(`📋 Found ${checksNeedingReminder.length} usage checks needing reminder`);
+      logger.info('Found usage checks needing reminder', { count: checksNeedingReminder.length });
 
       for (const check of checksNeedingReminder) {
         try {
@@ -136,7 +143,7 @@ export class ReSendUsageCheckService {
           );
 
           if (!subscription) {
-            console.error(`❌ Subscription ${check.subscriptionId} not found`);
+            logger.error('Subscription not found', { subscriptionId: check.subscriptionId });
             failed++;
             continue;
           }
@@ -152,7 +159,7 @@ export class ReSendUsageCheckService {
           );
 
           if (pendingUserIds.length === 0) {
-            console.log(`✅ All users responded for usage check ${check.id}`);
+            logger.debug('All users responded for usage check', { checkId: check.id });
             continue;
           }
 
@@ -165,25 +172,34 @@ export class ReSendUsageCheckService {
           for (const userId of pendingUserIds) {
             try {
               await this.slackClient.sendMessage(userId, message);
-              console.log(`📤 Reminder sent to user ${userId}`);
+              logger.debug('Reminder sent to user', { userId });
             } catch (error) {
-              console.error(`❌ Failed to resend to user ${userId}:`, error);
+              logger.error('Failed to resend to user', {
+                userId,
+                error: error instanceof Error ? error.message : String(error),
+              });
             }
           }
 
           sent++;
-          console.log(
-            `✅ Reminder sent for usage check ${check.id} to ${pendingUserIds.length} users`
-          );
+          logger.info('Reminder sent for usage check', {
+            checkId: check.id,
+            userCount: pendingUserIds.length,
+          });
         } catch (error) {
-          console.error(`❌ Error processing reminder for check ${check.id}:`, error);
+          logger.error('Error processing reminder for check', {
+            checkId: check.id,
+            error: error instanceof Error ? error.message : String(error),
+          });
           failed++;
         }
       }
 
       return { success: true, sent, failed };
     } catch (error) {
-      console.error('❌ Error in ReSendUsageCheckService:', error);
+      logger.error('Error in ReSendUsageCheckService', {
+        error: error instanceof Error ? error.message : String(error),
+      });
       throw error;
     }
   }
