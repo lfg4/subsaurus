@@ -1,6 +1,7 @@
+
 import Papa from 'papaparse';
 import * as XLSX from 'xlsx';
-import { Transaction } from '../domain/Transaction';
+import { Transaction } from '@/src/modules/import/domain/Transaction';
 
 export interface ColumnMapping {
   dateColumn: string;

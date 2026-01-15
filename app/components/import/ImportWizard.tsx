@@ -5,6 +5,7 @@ import { CSVUploader } from './CSVUploader';
 import { ColumnMapper } from './ColumnMapper';
 import { ImportPreview } from './ImportPreview';
 import { ManualSubscriptionSelector } from './ManualSubscriptionSelector';
+import { ParseCSVService } from '@/app/lib/import/ParseCSV.service';
 
 type Step = 'upload' | 'mapping' | 'manual-select' | 'preview' | 'success' | 'error';
 
@@ -54,7 +55,6 @@ export function ImportWizard({
     setError(null);
 
     try {
-      const { ParseCSVService } = await import('@/src/modules/import/application/ParseCSV.service');
       const parser = new ParseCSVService();
       const result = await parser.parseFile(selectedFile);
       
@@ -77,7 +77,6 @@ export function ImportWizard({
     setError(null);
 
     try {
-      const { ParseCSVService } = await import('@/src/modules/import/application/ParseCSV.service');
       const parser = new ParseCSVService();
       const transactions = await parser.parseTransactions(file, columnMapping);
       
@@ -86,18 +85,30 @@ export function ImportWizard({
       if (manualMode) {
         setStep('manual-select');
       } else {
-        const { DetectSubscriptionsService } = await import('@/src/modules/import/application/DetectSubscriptions.service');
-        const detector = new DetectSubscriptionsService();
-        const allPatterns = await detector.detectPatterns(transactions);
-        const likelySubscriptions = detector.filterLikelySubscriptions(allPatterns);
-        
-        const previews = likelySubscriptions.map(pattern => pattern.toPreview());
+        const response = await fetch('/api/import/detect', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            transactions: transactions.map(tx => ({
+              date: tx.date.toISOString(),
+              description: tx.description,
+              amount: tx.amount,
+              currency: tx.currency,
+            }))
+          })
+        });
+
+        if (!response.ok) {
+          throw new Error('Error detecting subscriptions');
+        }
+
+        const { previews } = await response.json();
         
         setSubscriptions(previews);
         setStep('preview');
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      setError(err instanceof Error ? err.message : 'Unknown error');
       setStep('error');
     } finally {
       setIsLoading(false);
@@ -118,52 +129,64 @@ export function ImportWizard({
         groups[key].push(tx);
       }
       
-      const { DetectSubscriptionsService } = await import('@/src/modules/import/application/DetectSubscriptions.service');
-      const { Transaction } = await import('@/src/modules/import/domain/Transaction');
-      
-      const detector = new DetectSubscriptionsService();
       const previews: typeof subscriptions = [];
       
       for (const [_, groupTransactions] of Object.entries(groups)) {
-        const txObjects = groupTransactions.map(tx => 
-          Transaction.create({
-            date: tx.date,
-            description: tx.description,
-            amount: tx.amount,
-            currency: tx.currency,
-            rawRow: {}
-          })
-        );
+        const sortedTransactions = groupTransactions.sort((a, b) => a.date.getTime() - b.date.getTime());
+        const avgAmount = sortedTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0) / sortedTransactions.length;
+        const lastDate = sortedTransactions[sortedTransactions.length - 1].date;
         
-        const patterns = await detector.detectPatterns(txObjects);
+        let cycle = 'monthly';
+        let nextRenewalDate = new Date(lastDate.getTime() + 30 * 24 * 60 * 60 * 1000);
         
-        if (patterns.length > 0) {
-          previews.push(patterns[0].toPreview());
-        } else {
-          const avgAmount = groupTransactions.reduce((sum, tx) => sum + Math.abs(tx.amount), 0) / groupTransactions.length;
-          const sortedDates = groupTransactions.map(tx => tx.date).sort((a, b) => a.getTime() - b.getTime());
-          const lastDate = sortedDates[sortedDates.length - 1];
+        if (sortedTransactions.length >= 2) {
+          const intervals: number[] = [];
+          for (let i = 1; i < sortedTransactions.length; i++) {
+            const days = Math.round((sortedTransactions[i].date.getTime() - sortedTransactions[i-1].date.getTime()) / (1000 * 60 * 60 * 24));
+            intervals.push(days);
+          }
+          const avgInterval = intervals.reduce((sum, val) => sum + val, 0) / intervals.length;
           
-          previews.push({
-            name: groupTransactions[0].description,
-            amount: `${avgAmount.toFixed(2)} ${groupTransactions[0].currency}`,
-            cycle: 'monthly', // Default
-            nextRenewal: new Date(lastDate.getTime() + 30 * 24 * 60 * 60 * 1000).toLocaleDateString('es-ES'),
-            occurrences: groupTransactions.length,
-            confidence: '100%',
-            transactions: groupTransactions.map(tx => ({
-              date: tx.date.toLocaleDateString('es-ES'),
-              amount: Math.abs(tx.amount)
-            }))
-          });
+          if (Math.abs(avgInterval - 30) <= 7) {
+            cycle = 'Mensual';
+            nextRenewalDate = new Date(lastDate);
+            nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 1);
+          } else if (Math.abs(avgInterval - 90) <= 10) {
+            cycle = 'Trimestral';
+            nextRenewalDate = new Date(lastDate);
+            nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 3);
+          } else if (Math.abs(avgInterval - 180) <= 15) {
+            cycle = 'Semestral';
+            nextRenewalDate = new Date(lastDate);
+            nextRenewalDate.setMonth(nextRenewalDate.getMonth() + 6);
+          } else if (Math.abs(avgInterval - 365) <= 30) {
+            cycle = 'Anual';
+            nextRenewalDate = new Date(lastDate);
+            nextRenewalDate.setFullYear(nextRenewalDate.getFullYear() + 1);
+          } else {
+            cycle = 'Mensual';
+          }
         }
+        
+        previews.push({
+          name: sortedTransactions[0].description,
+          amount: `${avgAmount.toFixed(2)} ${sortedTransactions[0].currency}`,
+          cycle: cycle,
+          nextRenewal: nextRenewalDate.toLocaleDateString('es-ES'),
+          occurrences: sortedTransactions.length,
+          confidence: '100%',
+          transactions: sortedTransactions.map(tx => ({
+            date: tx.date.toLocaleDateString('es-ES'),
+            amount: Math.abs(tx.amount)
+          }))
+        });
       }
       
       setSubscriptions(previews);
       setStep('preview');
     } catch (err) {
       console.error('Error processing manual selection:', err);
-      setError(err instanceof Error ? err.message : 'Error al procesar las transacciones seleccionadas');
+      setError(err instanceof Error ? err.message : 'Error processing selected transactions');
       setStep('error');
     } finally {
       setIsLoading(false);
@@ -177,26 +200,36 @@ export function ImportWizard({
     setError(null);
 
     try {
-      const { ParseCSVService } = await import('@/src/modules/import/application/ParseCSV.service');
-      const { DetectSubscriptionsService } = await import('@/src/modules/import/application/DetectSubscriptions.service');
-      
       const parser = new ParseCSVService();
       const transactions = await parser.parseTransactions(file, mapping);
       
-      const detector = new DetectSubscriptionsService();
-      const allPatterns = await detector.detectPatterns(transactions);
-      
-      const selectedPatterns = allPatterns
-        .filter(pattern => selectedNames.includes(pattern.name))
-        .map(pattern => pattern.toPreview());
+      const response = await fetch('/api/import/detect', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          transactions: transactions.map(tx => ({
+            date: tx.date.toISOString(),
+            description: tx.description,
+            amount: tx.amount,
+            currency: tx.currency,
+          }))
+        })
+      });
 
-      const response = await fetch('/api/import/confirm', {
+      if (!response.ok) {
+        throw new Error('Error detecting patterns');
+      }
+
+      const { previews } = await response.json() as { previews: SubscriptionPreview[] };
+      const selectedPreviews = previews.filter(p => selectedNames.includes(p.name));
+
+      const confirmResponse = await fetch('/api/import/confirm', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          patterns: selectedPatterns,
+          patterns: selectedPreviews,
           options: {
             slackWorkspaceId,
             createdBySlackUserId,
@@ -206,12 +239,12 @@ export function ImportWizard({
         }),
       });
 
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.error || 'Error al importar suscripciones');
+      if (!confirmResponse.ok) {
+        const errorData = await confirmResponse.json();
+        throw new Error(errorData.error || 'Error importing subscriptions');
       }
 
-      const result = await response.json();
+      const result = await confirmResponse.json();
       setImportResult(result);
       setStep('success');
 
