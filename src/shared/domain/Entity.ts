@@ -1,7 +1,3 @@
-/**
- * Base class for entities
- * Provides identity equality based on ID
- */
 export abstract class Entity<T> {
   protected constructor(public readonly id: T) {}
 
@@ -17,4 +13,3 @@ export abstract class Entity<T> {
     return this.id === entity.id;
   }
 }
-

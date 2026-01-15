@@ -2,6 +2,7 @@
 export enum UsageCheckStatus {
   SCHEDULED = 'SCHEDULED',
   SENT = 'SENT',
+  CLOSED = 'CLOSED',
 }
 
 export enum UsageResponseType {
@@ -12,6 +13,8 @@ export enum UsageResponseType {
 
 export enum RenewalCycle {
   MONTHLY = 'MONTHLY',
+  QUARTERLY = 'QUARTERLY',
+  SEMESTRAL = 'SEMESTRAL',
   YEARLY = 'YEARLY',
   CUSTOM = 'CUSTOM',
 }

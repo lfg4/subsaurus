@@ -28,7 +28,8 @@ export class SyncSlackUsersService {
 
   async execute(workspaceId: string): Promise<void> {
     try {
-      const response = await fetch('https://slack.com/api/users.list', {
+      const response = await fetch('https://slack.com/api/users.list',
+        {
         method: 'GET',
         headers: {
           Authorization: `Bearer ${this.slackToken}`,

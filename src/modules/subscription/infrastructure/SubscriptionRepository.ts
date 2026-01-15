@@ -44,6 +44,32 @@ export class SubscriptionRepository {
     });
   }
 
+  /**
+   * Update specific fields of a subscription
+   */
+  async updateFields(id: number, data: any): Promise<void> {
+    await prisma.subscription.update({
+      where: { id },
+      data: {
+        ...(data.name !== undefined && { name: data.name }),
+        ...(data.renewalCycle !== undefined && { renewalCycle: data.renewalCycle }),
+        ...(data.renewalDate !== undefined && { renewalDate: data.renewalDate }),
+        ...(data.costAmount !== undefined && { costAmount: data.costAmount }),
+        ...(data.costCurrency !== undefined && { costCurrency: data.costCurrency }),
+        ...(data.projects !== undefined && { project: data.projects[0] || null }),
+      },
+    });
+  }
+
+  /**
+   * Delete a subscription
+   */
+  async delete(id: number): Promise<void> {
+    await prisma.subscription.delete({
+      where: { id },
+    });
+  }
+
   async findById(id: number): Promise<Subscription | null> {
     const subscriptionData = await prisma.subscription.findUnique({
       where: { id },
@@ -57,6 +83,23 @@ export class SubscriptionRepository {
     return this.toDomain(subscriptionData);
   }
 
+  /**
+   * Find all subscriptions
+   */
+  async findAll(): Promise<Subscription[]> {
+    const subscriptions = await prisma.subscription.findMany({
+      include: {
+        subscriptionUsers: true,
+      },
+      orderBy: { renewalDate: 'asc' },
+    });
+
+    return subscriptions.map(s => this.toDomain(s));
+  }
+
+  /**
+   * Find subscriptions renewing tomorrow
+   */
   async findRenewingTomorrow(): Promise<Subscription[]> {
     const now = new Date();
     const tomorrow = new Date(Date.UTC(

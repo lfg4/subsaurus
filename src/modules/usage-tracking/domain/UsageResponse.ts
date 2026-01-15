@@ -138,3 +138,4 @@ export class UsageResponse extends Entity<number> {
   }
 }
 
+export type UsageResponsePrimitives = ReturnType<UsageResponse['toPrimitives']>;
