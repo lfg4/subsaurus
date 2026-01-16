@@ -11,7 +11,8 @@ export interface CreateSubscriptionDTO {
   renewalCycle: RenewalCycle;
   renewalDate: string;
   slackUserIds?: string[];
-  project?: string;
+  project?: string; // Can be comma-separated for multiple projects
+  projects?: string[]; // Alternative: array of projects
   notes?: string;
 }
 
@@ -21,7 +22,8 @@ export interface UpdateSubscriptionDTO {
   costCurrency?: string;
   renewalCycle?: RenewalCycle;
   renewalDate?: string;
-  project?: string;
+  project?: string; // Can be comma-separated for multiple projects
+  projects?: string[]; // Alternative: array of projects
   slackUserIds?: string[];
   notes?: string;
 }

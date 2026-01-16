@@ -40,7 +40,7 @@ export function SubscriptionEdit({ subscriptionId, setCurrentPage, currentUser }
         setSubscription(data);
         setFormData({
           name: data.name,
-          project: data.projects?.[0] || '',
+          project: data.projects?.join(', ') || '',
           renewalCycle: data.renewalCycle,
           renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
           costAmount: data.costAmount,
@@ -62,11 +62,23 @@ const getUserInfo = (slackUserId: string) => {
 const handleSave = async () => {
   setIsSaving(true);
   try {
-    await subscriptionsApi.update(subscriptionId, formData);
+    // Parse projects from comma-separated string
+    const projectsArray = formData.project
+      ? formData.project.split(',').map(p => p.trim()).filter(p => p.length > 0)
+      : [];
+
+    const { project, ...restFormData } = formData;
+
+    const updateData = {
+      ...restFormData,
+      projects: projectsArray
+    };
+
+    await subscriptionsApi.update(subscriptionId, updateData);
 
     toast.success('Changes saved successfully');
       setCurrentPage('subscriptions');
-    } catch {
+    } catch (error) {
       toast.error('Error saving changes');
     } finally {
       setIsSaving(false);
@@ -174,14 +186,16 @@ const getAvailableUsers = () => {
             />
           </div>
           <div>
-            <label htmlFor={`project-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Project</label>
+            <label htmlFor={`project-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Projects</label>
             <input 
               id={`project-${subscription.id}`}
               type="text" 
               value={formData.project}
               onChange={(e) => setFormData({...formData, project: e.target.value})}
+              placeholder="e.g. Design Team, Marketing, Sales"
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold"
             />
+            <p className="text-xs text-gray-500 mt-1">💡 Separate multiple projects with commas</p>
           </div>
           <div>
             <label htmlFor={`renewalCycle-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>

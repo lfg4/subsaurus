@@ -231,39 +231,21 @@ export class SlackMessageBuilder {
           block_id: 'projects_block',
           optional: true,
           element: {
-            type: 'multi_static_select',
-            action_id: 'projects_select',
+            type: 'plain_text_input',
+            action_id: 'projects_input',
             placeholder: {
               type: 'plain_text',
-              text: 'Select projects (optional)',
+              text: 'e.g., Project Alpha, Project Beta',
             },
-            options: [
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Alpha',
-                },
-                value: 'project_alpha',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Beta',
-                },
-                value: 'project_beta',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Gamma',
-                },
-                value: 'project_gamma',
-              },
-            ],
+            multiline: false,
           },
           label: {
             type: 'plain_text',
             text: 'Projects',
+          },
+          hint: {
+            type: 'plain_text',
+            text: 'Separate multiple projects with commas',
           },
         },
       ],

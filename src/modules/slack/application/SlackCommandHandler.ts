@@ -194,7 +194,7 @@ export class SlackCommandHandler {
     const renewalCycleValue = values.renewal_cycle_block?.renewal_cycle_select;
     const dateValue = values.date_block?.date_input;
     const usersValue = values.users_block?.users_select;
-    const projectsValue = values.projects_block?.projects_select;
+    const projectsValue = values.projects_block?.projects_input;
 
     if (!nameValue?.value) {
       return { errors: { name_block: 'Name is required' } };
@@ -224,7 +224,12 @@ export class SlackCommandHandler {
     }
 
     const users = usersValue?.selected_users || [];
-    const projects = projectsValue?.selected_options?.map((o: any) => o.value) || [];
+    
+    // Parse projects from comma-separated string
+    const projectsText = projectsValue?.value?.trim() || '';
+    const projects = projectsText
+      ? projectsText.split(',').map((p: string) => p.trim()).filter((p: string) => p.length > 0)
+      : [];
 
     return {
       data: {

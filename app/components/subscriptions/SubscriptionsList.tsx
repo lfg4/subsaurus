@@ -296,7 +296,22 @@ useEffect(() => {
                   <td className="px-6 py-4">
                     <div className="font-bold text-gray-900">{sub.name}</div>
                   </td>
-                  <td className="px-6 py-4 text-gray-600 font-semibold">{sub.projects[0] || 'No project'}</td>
+                  <td className="px-6 py-4">
+                    {sub.projects && sub.projects.length > 0 ? (
+                      <div className="flex flex-wrap gap-1">
+                        {sub.projects.map((project, idx) => (
+                          <span 
+                            key={idx}
+                            className="inline-flex px-2 py-1 text-xs font-bold rounded-lg bg-purple-100 text-purple-800 border border-purple-300"
+                          >
+                            {project}
+                          </span>
+                        ))}
+                      </div>
+                    ) : (
+                      <span className="text-gray-400 text-sm font-semibold">No projects</span>
+                    )}
+                  </td>
                   <td className="px-6 py-4">
                     <span className="inline-flex px-3 py-1 text-xs font-black rounded-full bg-blue-100 text-blue-700 border-2 border-blue-300">
                       {sub.renewalCycle}
