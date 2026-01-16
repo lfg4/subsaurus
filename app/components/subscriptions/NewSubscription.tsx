@@ -46,8 +46,16 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
 
     setIsSaving(true);
     try {
+      // Parse projects from comma-separated string
+      const projectsArray = formData.project
+        ? formData.project.split(',').map(p => p.trim()).filter(p => p.length > 0)
+        : [];
+
+      const { project, ...restFormData } = formData;
+
       await subscriptionsApi.create({
-        ...formData,
+        ...restFormData,
+        projects: projectsArray,
         slackUserIds: selectedUserIds.length > 0 ? selectedUserIds : [],
         slackWorkspaceId: currentUser.slackWorkspaceId,
         createdBySlackUserId: currentUser.slackUserId
@@ -55,7 +63,8 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
 
       toast.success('Subscription created successfully!');
       setCurrentPage('subscriptions');
-    } catch {
+    } catch (error) {
+      console.error('Error creating subscription:', error);
       toast.error('Error creating subscription');
     } finally {
       setIsSaving(false);
@@ -72,7 +81,7 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
 
   const getAvailableUsers = () => {
     return slackUsers
-      .filter(u => !selectedUserIds.includes(u.slackUserId))
+      .filter(u => !selectedUserIds.includes(u.slackUserId) && u.isActive)
       .map(u => ({
         slackUserId: u.slackUserId,
         displayName: u.displayName,
@@ -118,14 +127,15 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
             />
           </div>
           <div>
-            <label htmlFor="project" className="block text-sm font-bold text-gray-700 mb-2">Project</label>
+            <label htmlFor="project" className="block text-sm font-bold text-gray-700 mb-2">Projects</label>
             <input 
               type="text" 
               value={formData.project}
               onChange={(e) => setFormData({...formData, project: e.target.value})}
-              placeholder="e.g. Design Team"
+              placeholder="e.g. Design Team, Marketing, Sales"
               className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold"
             />
+            <p className="text-xs text-gray-500 mt-1">💡 Separate multiple projects with commas</p>
           </div>
           <div>
             <label htmlFor="renewalCycle" className="block text-sm font-bold text-gray-700 mb-2">Renewal cycle</label>

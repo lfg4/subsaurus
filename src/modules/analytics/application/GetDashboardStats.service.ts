@@ -174,12 +174,11 @@ export class GetDashboardStatsService {
       return renewalDate >= now && renewalDate <= thirtyDaysFromNow;
     })
     .map(sub => {
-      console.log('Subscription id:', sub.id, 'Type:', typeof sub.id);
       const renewalDate = sub.renewalDate;
       const daysUntil = Math.ceil((renewalDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
       const { amount, currency } = sub.cost.toPrimitives();
 
-      const renewal = {
+      return {
         id: sub.id,
         name: sub.name,
         amount: amount,
@@ -187,9 +186,6 @@ export class GetDashboardStatsService {
         renewalDate: renewalDate.toISOString(),  
         daysUntil,
       };
-      
-      console.log('Creating renewal:', renewal);
-      return renewal;
     })
     .sort((a, b) => a.daysUntil - b.daysUntil);
 }
@@ -198,16 +194,21 @@ export class GetDashboardStatsService {
     const projectMap = new Map<string, { currency: string; amount: number; count: number }>();
 
     subscriptions.forEach(sub => {
-      const project = sub.projects[0] || 'No Project';
       const { currency } = sub.cost.toPrimitives();
       const monthlyEquiv = this.getMonthlyEquivalent(sub);
-      const key = `${project}|${currency}`;
-
-      const existing = projectMap.get(key) || { currency, amount: 0, count: 0 };
-      projectMap.set(key, {
-        currency,
-        amount: existing.amount + monthlyEquiv,
-        count: existing.count + 1,
+      
+      // If subscription has no projects, assign to "No Project"
+      const projects = sub.projects.length > 0 ? sub.projects : ['No Project'];
+      
+      // Add this subscription to ALL its projects
+      projects.forEach(project => {
+        const key = `${project}|${currency}`;
+        const existing = projectMap.get(key) || { currency, amount: 0, count: 0 };
+        projectMap.set(key, {
+          currency,
+          amount: existing.amount + monthlyEquiv,
+          count: existing.count + 1,
+        });
       });
     });
 

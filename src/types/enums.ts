@@ -23,5 +23,7 @@ export enum SlackActionId {
   USAGE_RESPONSE_YES = 'usage_response_yes',
   USAGE_RESPONSE_NO = 'usage_response_no',
   USAGE_RESPONSE_LITTLE = 'usage_response_little',
+  USER_ASSIGNMENT_YES = 'user_assignment_yes',
+  USER_ASSIGNMENT_NO = 'user_assignment_no',
 }
 

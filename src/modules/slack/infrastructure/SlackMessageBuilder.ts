@@ -11,7 +11,7 @@ export class SlackMessageBuilder {
           type: 'header',
           text: {
             type: 'plain_text',
-            text: ':t-rex: Available Commands',
+            text: ':t-rex: Dino\'s Command Menu! 🦖',
             emoji: true,
           },
         },
@@ -19,14 +19,14 @@ export class SlackMessageBuilder {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: '*`/subsaurus help`*\nShow this help message',
+            text: '*`/subsaurus help`*\n_Show this fancy menu again (because you forgot already, didn\'t you?)_ :wink:',
           },
         },
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: '*`/subsaurus create`*\nCreate a new subscription',
+            text: '*`/subsaurus create`*\n_Birth a new subscription into existence!_ :sparkles: _The dino will track it like a hawk... or like a dino!_ :eyes:',
           },
         },
         {
@@ -37,7 +37,7 @@ export class SlackMessageBuilder {
           elements: [
             {
               type: 'mrkdwn',
-              text: '💡 _More commands coming soon..._',
+              text: ':construction: _More epic commands cooking in the lab... Stay tuned!_ :microscope::fire:',
             },
           ],
         },
@@ -52,7 +52,7 @@ export class SlackMessageBuilder {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `:x: *Error*\n${error}`,
+            text: `:boom: *Oopsie Daisy!*\n\nThe dino tripped over its tail... :t-rex::sweat_smile:\n\n_Error details:_ ${error}\n\n_Try again? The dino believes in you!_ :muscle:`,
           },
         },
       ],
@@ -231,39 +231,21 @@ export class SlackMessageBuilder {
           block_id: 'projects_block',
           optional: true,
           element: {
-            type: 'multi_static_select',
-            action_id: 'projects_select',
+            type: 'plain_text_input',
+            action_id: 'projects_input',
             placeholder: {
               type: 'plain_text',
-              text: 'Select projects (optional)',
+              text: 'e.g., Project Alpha, Project Beta',
             },
-            options: [
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Alpha',
-                },
-                value: 'project_alpha',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Beta',
-                },
-                value: 'project_beta',
-              },
-              {
-                text: {
-                  type: 'plain_text',
-                  text: 'Project Gamma',
-                },
-                value: 'project_gamma',
-              },
-            ],
+            multiline: false,
           },
           label: {
             type: 'plain_text',
             text: 'Projects',
+          },
+          hint: {
+            type: 'plain_text',
+            text: 'Separate multiple projects with commas',
           },
         },
       ],
@@ -360,8 +342,8 @@ export class SlackMessageBuilder {
 
     const funnyIntro =
       renewalCycle === RenewalCycle.MONTHLY
-        ? "Time flies when you're subscribed! :calendar:"
-        : 'Another year around the sun! :sunny:';
+        ? "Whoosh! :dash: Another month flew by faster than a pizza disappearing at a tech meetup!"
+        : 'Holy guacamole! :taco: A whole year has passed! (Did you age or did we? :thinking_face:)';
 
     return {
       blocks: [
@@ -369,7 +351,7 @@ export class SlackMessageBuilder {
           type: 'header',
           text: {
             type: 'plain_text',
-            text: ':t-rex: Subsaurus Usage Check',
+            text: ':t-rex: Dino\'s Got Questions! 🤔',
             emoji: true,
           },
         },
@@ -377,14 +359,14 @@ export class SlackMessageBuilder {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${funnyIntro}\n\n*${subscriptionName}* is about to renew, and we're wondering...`,
+            text: `${funnyIntro}\n\n*${subscriptionName}* is about to renew and honestly... :drum:`,
           },
         },
         {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `:thinking_face: *Did you actually use this ${period === 'month' ? 'this past month' : 'this past year'}?*\n\n_Be honest, we won't judge... much._ :eyes:`,
+            text: `:eyes: *Real talk:* Did you ACTUALLY use this ${period === 'month' ? 'this past month' : 'this past year'}?\n\n_Be honest, the dino can smell lies... and also cookies._ :cookie::t-rex:`,
           },
         },
         {
@@ -432,7 +414,7 @@ export class SlackMessageBuilder {
           elements: [
             {
               type: 'mrkdwn',
-              text: ':bulb: _Your honest feedback helps keep our subscription game strong!_',
+              text: ':sparkles: _Your honesty helps us save money and keep the dino fed! Win-win!_ :t-rex::moneybag:',
             },
           ],
         },
@@ -451,7 +433,7 @@ export class SlackMessageBuilder {
         type: 'header',
         text: {
           type: 'plain_text',
-          text: ':calendar: Subscriptions Renewing Tomorrow',
+          text: ':rotating_light: TOMORROW IS THE DAY! :rotating_light:',
           emoji: true,
         },
       },
@@ -459,7 +441,7 @@ export class SlackMessageBuilder {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: ":t-rex: *Hey there!* The following subscriptions are renewing tomorrow. Here's a quick summary of usage:",
+          text: ":t-rex: *Attention humans!* :loudspeaker:\n\nThese subscriptions are renewing TOMORROW and the dino has been collecting intel on whether you actually use them... :detective:\n\n_Spoiler alert: Some of you might be busted!_ :eyes:",
         },
       },
       {
@@ -504,7 +486,7 @@ export class SlackMessageBuilder {
       elements: [
         {
           type: 'mrkdwn',
-          text: ':bulb: _All subscriptions have been updated for the next cycle!_',
+          text: ':tada: _Boom! All subscriptions rolled over like a good dog! Ready for another cycle!_ :t-rex::rocket:',
         },
       ],
     });
@@ -514,12 +496,87 @@ export class SlackMessageBuilder {
 
   buildResponseConfirmation(responseType: UsageResponseType): string {
     const messages: Record<string, string> = {
-      [UsageResponseType.YES]: "✅ Great! Thanks for confirming you're using this subscription.",
-      [UsageResponseType.NO]: "🚫 Got it. We will consider canceling if you're not using it.",
+      [UsageResponseType.YES]: "🎸 *ROCK ON!* The dino is happy you're using it! Keep crushing it! :t-rex::fire:",
+      [UsageResponseType.NO]: "👀 *Oof!* Not using it, eh? The dino might have to eat this subscription... :t-rex::fork_and_knife:",
       [UsageResponseType.LITTLE]:
-        '🤔 Hmm, maybe we could optimize the plan. Thanks for the feedback!',
+        '🤷 *Meh, barely using it?* Maybe we can find a cheaper plan or the dino might get hungry... :t-rex::thinking_face:',
     };
     return messages[responseType];
+  }
+
+  buildUserAssignmentRequestMessage(subscriptionId: number, subscriptionName: string) {
+    return {
+      blocks: [
+        {
+          type: 'header',
+          text: {
+            type: 'plain_text',
+            text: ':t-rex: Mystery Subscription Alert! 🕵️',
+            emoji: true,
+          },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: `We found *${subscriptionName}* wandering around like a lost puppy... :eyes:\n\nNobody's claimed it yet and it's feeling lonely! :cry:`,
+          },
+        },
+        {
+          type: 'section',
+          text: {
+            type: 'mrkdwn',
+            text: '*Plot twist:* Is this YOUR subscription? :scream:\n\n_Help the dino solve this mystery!_ :mag:',
+          },
+        },
+        {
+          type: 'divider',
+        },
+        {
+          type: 'actions',
+          elements: [
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: 'Yep, that\'s mine! 🙋',
+                emoji: true,
+              },
+              style: 'primary',
+              value: `${subscriptionId}|YES`,
+              action_id: SlackActionId.USER_ASSIGNMENT_YES,
+            },
+            {
+              type: 'button',
+              text: {
+                type: 'plain_text',
+                text: 'Nope, not me! 🤷',
+                emoji: true,
+              },
+              value: `${subscriptionId}|NO`,
+              action_id: SlackActionId.USER_ASSIGNMENT_NO,
+            },
+          ],
+        },
+        {
+          type: 'context',
+          elements: [
+            {
+              type: 'mrkdwn',
+              text: ':sparkles: _If it\'s yours, you\'ll automagically get added and we\'ll ping you before renewals!_',
+            },
+          ],
+        },
+      ],
+    };
+  }
+
+  buildUserAssignmentConfirmation(subscriptionName: string, wasAssigned: boolean): string {
+    if (wasAssigned) {
+      return `🎉 *BOOM!* You're now the proud owner of *${subscriptionName}*! 🏆\n\nThe dino will keep you posted on renewals and stuff. No worries! :t-rex::sunglasses:`;
+    } else {
+      return `👌 *Cool cool cool!* Not your subscription, noted! :memo:\n\nThe mystery continues... :mag: We'll find who this *${subscriptionName}* belongs to!`;
+    }
   }
 }
 

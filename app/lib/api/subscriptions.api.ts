@@ -11,7 +11,8 @@ export interface CreateSubscriptionDTO {
   renewalCycle: RenewalCycle;
   renewalDate: string;
   slackUserIds?: string[];
-  project?: string;
+  project?: string; // Can be comma-separated for multiple projects
+  projects?: string[]; // Alternative: array of projects
   notes?: string;
 }
 
@@ -21,7 +22,8 @@ export interface UpdateSubscriptionDTO {
   costCurrency?: string;
   renewalCycle?: RenewalCycle;
   renewalDate?: string;
-  project?: string;
+  project?: string; // Can be comma-separated for multiple projects
+  projects?: string[]; // Alternative: array of projects
   slackUserIds?: string[];
   notes?: string;
 }
@@ -57,6 +59,13 @@ class SubscriptionsApi {
 
   async delete(id: number): Promise<ApiResponse<void>> {
     return apiClient.delete<ApiResponse<void>>(`/subscriptions/${id}`);
+  }
+
+  async requestUsers(id: number): Promise<{ success: boolean; sentCount: number; message: string }> {
+    return apiClient.post<{ success: boolean; sentCount: number; message: string }>(
+      `/subscriptions/${id}/request-users`,
+      {}
+    );
   }
 }
 

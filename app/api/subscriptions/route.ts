@@ -56,7 +56,7 @@ export async function POST(request: Request) {
       renewalCycle: body.renewalCycle as RenewalCycle,
       renewalDate: body.renewalDate,
       slackUserIds: body.slackUserIds || [],
-      projects: body.project ? [body.project] : [],
+      projects: body.projects || (body.project ? [body.project] : []),
       notes: body.notes,
     });
 

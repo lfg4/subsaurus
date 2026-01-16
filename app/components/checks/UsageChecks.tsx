@@ -3,17 +3,19 @@
 import { Check, ChevronRight } from 'lucide-react';
 import { formatDate } from '@/app/utils/formatDate';
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { usageChecksApi } from '@/app/lib/api';
 import { UsageCheckStatus } from '@/src/types/enums';
 import type { PageType } from '@/app/types';
 
 interface UsageChecksProps {
-  setCurrentPage: (page: PageType) => void;
-  setSelectedCheckId: (id: number) => void;
+  setCurrentPage?: (page: PageType) => void;
+  setSelectedCheckId?: (id: number) => void;
   workspaceId: string;
 }
 
 export function UsageChecks({ setCurrentPage, setSelectedCheckId, workspaceId }: UsageChecksProps) {
+  const router = useRouter();
   const [checks, setChecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -39,8 +41,14 @@ export function UsageChecks({ setCurrentPage, setSelectedCheckId, workspaceId }:
   }
 
   const handleViewDetail = (id: number) => {
-    setSelectedCheckId(id);
-    setCurrentPage('check-detail');
+    if (setSelectedCheckId && setCurrentPage) {
+      // Old navigation (backward compatibility)
+      setSelectedCheckId(id);
+      setCurrentPage('check-detail');
+    } else {
+      // New navigation (Next.js routing)
+      router.push(`/checks/${id}`);
+    }
   };
 
   return (

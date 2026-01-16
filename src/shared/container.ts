@@ -228,6 +228,8 @@ container.register(
       container.resolve('SlackClient'),
       container.resolve('SlackMessageBuilder'),
       container.resolve('CreateSubscriptionService'),
+      container.resolve('UpdateSubscriptionService'),
+      container.resolve('GetSubscriptionByIdService'),
       container.resolve('RecordUsageResponseService')
     )
 );
