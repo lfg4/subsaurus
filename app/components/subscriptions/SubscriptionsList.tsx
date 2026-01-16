@@ -9,6 +9,7 @@ import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
 import { subscriptionsApi, usageChecksApi } from '@/app/lib/api';
 import { toast } from 'sonner';
+import { getCurrencySymbol } from '@/app/utils/currency';
 
 interface SubscriptionsListProps {
   searchTerm: string;
@@ -333,8 +334,8 @@ useEffect(() => {
                   <td className="px-6 py-4 text-gray-600 font-semibold">{formatDate(sub.renewalDate)}</td>
                   <td className="px-6 py-4">
                    <div className="font-black text-gray-900">
-                    {sub.costCurrency === 'EUR' ? '€' : sub.costCurrency === 'USD' ? '$' : '£'}{sub.costAmount}
-                    </div>
+  {getCurrencySymbol(sub.costCurrency)}{sub.costAmount}
+</div>
                     <div className="text-xs text-gray-500 font-semibold">{sub.costCurrency}</div>
                   </td>
                   <td className="px-6 py-4 text-gray-600 font-bold">{sub.slackUserIds?.length || 0}</td>

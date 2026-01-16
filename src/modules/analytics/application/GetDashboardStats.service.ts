@@ -1,6 +1,8 @@
 import type { SubscriptionRepository } from '@/src/modules/subscription/infrastructure/SubscriptionRepository';
 import type { UsageCheckRepository } from '@/src/modules/usage-tracking/infrastructure/UsageCheckRepository';
 import type { UsageResponseRepository } from '@/src/modules/usage-tracking/infrastructure/UsageResponseRepository';
+import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import type { ConvertCurrencyTotalsService } from './ConvertCurrencyTotalsService';
 import { DashboardStats } from '../domain/DashboardStats';
 import type { Subscription } from '@/src/modules/subscription/domain/Subscription';
 import type {
@@ -16,24 +18,34 @@ export class GetDashboardStatsService {
   constructor(
     private subscriptionRepository: SubscriptionRepository,
     private usageCheckRepository: UsageCheckRepository,
-    private usageResponseRepository: UsageResponseRepository
+    private usageResponseRepository: UsageResponseRepository,
+    private settingsRepository: SettingsRepository,
+    private convertCurrencyTotalsService: ConvertCurrencyTotalsService
   ) {}
 
   async execute(workspaceId: string): Promise<DashboardStats> {
     const subscriptions = await this.subscriptionRepository.findAll(workspaceId);
+    const preferredCurrency = await this.settingsRepository.getPreferredCurrency(workspaceId);
 
     const currencyTotals = this.calculateCurrencyTotals(subscriptions);
     const subscriptionHealth = await this.analyzeSubscriptionHealth(subscriptions);
     const subscriptionsWithoutUsers = this.findSubscriptionsWithoutUsers(subscriptions);
     const upcomingRenewals = this.getUpcomingRenewals(subscriptions);
     const projectExpenses = this.calculateProjectExpenses(subscriptions);
+    
+    const { convertedTotal } = await this.convertCurrencyTotalsService.execute({
+      currencyTotals,
+      targetCurrency: preferredCurrency,
+    });
 
     return DashboardStats.create(
       currencyTotals,
       subscriptionHealth,
       subscriptionsWithoutUsers,
       upcomingRenewals,
-      projectExpenses
+      projectExpenses,
+      convertedTotal,
+      preferredCurrency
     );
   }
 

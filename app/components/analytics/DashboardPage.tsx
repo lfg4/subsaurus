@@ -20,14 +20,21 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
 
-  useEffect(() => {
+useEffect(() => {
+  if (currentUser?.slackWorkspaceId) {
+    setIsLoading(true);
     analyticsApi.getDashboard(currentUser.slackWorkspaceId)
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, [currentUser.slackWorkspaceId]);
+      .then((dashboardData) => {
+        setData(dashboardData);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }
+}, [currentUser]);
 
-  useEffect(() => {
+useEffect(() => {
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setIsProjectDropdownOpen(false);
@@ -86,22 +93,23 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
       </div>
 
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-4 border-green-400 p-8 shadow-xl">
-        <div className="text-sm font-bold text-gray-600 mb-2">TOTAL MONTHLY SPENDING</div>
-        <div className="flex items-baseline gap-4 flex-wrap">
-          {data.currencyTotals.map((total, idx) => (
-            <div key={total.currency} className="flex items-baseline gap-2">
-              {idx > 0 && <span className="text-2xl font-black text-gray-400">+</span>}
-              <span className="text-5xl font-black text-gray-900">
-                {getCurrencySymbol(total.currency)}{total.totalMonthly.toFixed(2)}
-              </span>
-              <span className="text-xl font-bold text-gray-600">{total.currency}</span>
-            </div>
-          ))}
-        </div>
-        <div className="text-sm font-semibold text-gray-600 mt-2">
-          {data.currencyTotals.reduce((sum, t) => sum + t.subscriptionCount, 0)} active subscriptions
-        </div>
-      </div>
+  <div className="text-sm font-bold text-gray-600 mb-2">TOTAL MONTHLY SPENDING</div>
+  <div className="flex items-baseline gap-2">
+    <span className="text-5xl font-black text-gray-900">
+      {getCurrencySymbol(data.preferredCurrency)}
+      {data.convertedTotal.toFixed(2)}
+    </span>
+    <span className="text-xl font-bold text-gray-600">{data.preferredCurrency}</span>
+  </div>
+  {data.currencyTotals.some(t => t.currency !== data.preferredCurrency) && (
+    <div className="text-xs text-gray-500 mt-2">
+      ℹ️ Amounts converted to your preferred currency
+    </div>
+  )}
+  <div className="text-sm font-semibold text-gray-600 mt-2">
+    {data.currencyTotals.reduce((sum, t) => sum + t.subscriptionCount, 0)} active subscriptions
+  </div>
+</div>
 
 <div className={`bg-white rounded-2xl border-4 p-6 shadow-lg ${
         readyToCancelCount === 0 && lowUsageCount === 0 ? 'border-green-400' : 'border-red-400'
@@ -141,47 +149,50 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
         </div>
 
         <div className="space-y-2">
-          {filteredHealth.length > 0 ? (
-            filteredHealth.map(sub => (
-              <div
-                key={sub.id}
-                className={`p-4 rounded-lg border-2 ${
-                  sub.status === 'ready-to-cancel'
-                    ? 'bg-red-50 border-red-300'
-                    : 'bg-yellow-50 border-yellow-300'
-                }`}
-              >
-                <div className="flex justify-between items-start">
-                  <div>
-                    <div className="font-bold text-gray-900 text-lg">{sub.name}</div>
-                    <div className="text-sm text-gray-600 font-semibold mt-1">
-                      {sub.reason}
-                    </div>
-                  </div>
-                  <div className="text-right">
-                    <div className="font-black text-gray-900">
-                      {getCurrencySymbol(sub.currency)}{sub.monthlyEquivalent.toFixed(2)}/mo
-                    </div>
-                  </div>
-                </div>
-              </div>
-            ))
-          ) : (
-            <div className="text-center py-12">
-              <div className="text-8xl mb-4">🦖✨</div>
-              <h3 className="text-2xl font-black text-gray-900 mb-2">
-                {healthTab === 'ready-to-cancel' 
-                  ? 'No subscriptions ready to cancel!' 
-                  : 'No subscriptions with low usage!'}
-              </h3>
-              <p className="text-gray-600 font-semibold">
-                {healthTab === 'ready-to-cancel'
-                  ? 'Nothing to devour today! Everyone is using their subscriptions 😢'
-                  : 'The dino is on the hunt - ready to catch any low-usage subscriptions! 🎯'}
-              </p>
+  {filteredHealth.length > 0 ? (
+    filteredHealth.map(sub => (
+      <button
+        key={sub.id}
+        type="button"
+        onClick={() => {
+          setSelectedSubscriptionId(sub.id);
+        }}
+        className={`w-full p-4 rounded-lg border-2 transition-all cursor-pointer ${
+          sub.status === 'ready-to-cancel'
+            ? 'bg-red-50 border-red-300 hover:bg-red-100 hover:border-red-400'
+            : 'bg-yellow-50 border-yellow-300 hover:bg-yellow-100 hover:border-yellow-400'
+        }`}
+      >
+        <div className="flex justify-between items-start">
+          <div className="text-left">
+            <div className="font-bold text-gray-900 text-lg">{sub.name}</div>
+            <div className="text-sm text-gray-600 font-semibold mt-1">
+              {sub.reason}
             </div>
-          )}
+          </div>
+                <div className="text-right">
+            <div className="font-black text-gray-900">
+{getCurrencySymbol(sub.currency)}{sub.monthlyEquivalent.toFixed(2)}/mo            </div>
+          </div>
         </div>
+      </button>
+    ))
+  ) : (
+    <div className="text-center py-12">
+      <div className="text-8xl mb-4">🦖✨</div>
+      <h3 className="text-2xl font-black text-gray-900 mb-2">
+        {healthTab === 'ready-to-cancel' 
+          ? 'No subscriptions ready to cancel!' 
+          : 'No subscriptions with low usage!'}
+      </h3>
+      <p className="text-gray-600 font-semibold">
+        {healthTab === 'ready-to-cancel'
+          ? 'Nothing to devour today! Everyone is using their subscriptions 😢'
+          : 'The dino is on the hunt - ready to catch any low-usage subscriptions! 🎯'}
+      </p>
+    </div>
+  )}
+</div>
       </div>
 
       {data.upcomingRenewals.length > 0 && (
@@ -194,7 +205,7 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
             {Array.from(totalRenewalsAmount.entries()).map(([currency, amount]) => (
               <div key={currency} className="px-3 py-1 bg-blue-100 border-2 border-blue-300 rounded-lg">
                 <span className="text-sm font-bold text-blue-900">
-                  Total: {getCurrencySymbol(currency)}{amount.toFixed(2)}
+                 Total: {getCurrencySymbol(currency)}{amount.toFixed(2)}
                 </span>
               </div>
             ))}
@@ -313,8 +324,7 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-gray-900">{project.project}</span>
                     <span className="text-sm font-semibold text-gray-600">
-                      {getCurrencySymbol(project.currency)}{project.monthlyAmount.toFixed(2)}/mo ({project.subscriptionCount} subs)
-                    </span>
+{getCurrencySymbol(project.currency)}{project.monthlyAmount.toFixed(2)}/mo                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden border-2 border-gray-300">
                     <div

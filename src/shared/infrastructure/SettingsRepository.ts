@@ -12,23 +12,37 @@ export class SettingsRepository {
     return AppSettings.fromPrimitives(settings);
   }
 
-  async upsert(slackWorkspaceId: string, daysBeforeRenewal: number): Promise<AppSettings> {
-    const settings = await prisma.appSettings.upsert({
-      where: { slackWorkspaceId },
-      update: { daysBeforeRenewal },
-      create: {
-        slackWorkspaceId,
-        daysBeforeRenewal,
-        isActive: true,
-      },
-    });
+  async upsert(slackWorkspaceId: string, daysBeforeRenewal: number, preferredCurrency?: string): Promise<AppSettings> {
+  const updateData: { daysBeforeRenewal: number; preferredCurrency?: string } = {
+    daysBeforeRenewal
+  };
 
-    return AppSettings.fromPrimitives(settings);
+  if (preferredCurrency) {
+    updateData.preferredCurrency = preferredCurrency; // 👈 AÑADIR
   }
+
+  const settings = await prisma.appSettings.upsert({
+    where: { slackWorkspaceId },
+    update: updateData, // 👈 CAMBIAR de { daysBeforeRenewal } a updateData
+    create: {
+      slackWorkspaceId,
+      daysBeforeRenewal,
+      preferredCurrency: preferredCurrency || 'EUR', // 👈 AÑADIR
+      isActive: true,
+    },
+  });
+
+  return AppSettings.fromPrimitives(settings);
+}
 
   async getDaysBeforeRenewal(slackWorkspaceId: string): Promise<number> {
     const settings = await this.findByWorkspace(slackWorkspaceId);
     return settings?.daysBeforeRenewal ?? 7; // Default to 7 days
+  }
+
+  async getPreferredCurrency(slackWorkspaceId: string): Promise<string> {
+    const settings = await this.findByWorkspace(slackWorkspaceId);
+    return settings?.preferredCurrency ?? 'EUR';
   }
 
   async getAllWorkspaceIds(): Promise<string[]> {

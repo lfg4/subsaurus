@@ -8,6 +8,7 @@ import { ManualSubscriptionSelector } from './ManualSubscriptionSelector';
 import { ParseCSVService } from '@/app/lib/import/ParseCSV.service';
 import { importApi, type SubscriptionPreview } from '@/app/lib/api';
 
+
 type Step = 'upload' | 'mapping' | 'manual-select' | 'preview' | 'success' | 'error';
 
 interface Column {
@@ -39,6 +40,7 @@ export function ImportWizard({
   const [isLoading, setIsLoading] = useState(false);
   const [importResult, setImportResult] = useState<{ imported: number; skipped: number; errors: Array<{ pattern: string; error: string }> } | null>(null);
   const [parsedTransactions, setParsedTransactions] = useState<Array<{ date: Date; description: string; amount: number; currency: string }>>([]);
+  
 
   const handleFileSelected = async (selectedFile: File) => {
     setFile(selectedFile);
@@ -157,8 +159,9 @@ export function ImportWizard({
           occurrences: sortedTransactions.length,
           confidence: '100%',
           transactions: sortedTransactions.map(tx => ({
-            date: tx.date.toLocaleDateString('es-ES'),
-            amount: Math.abs(tx.amount)
+  date: tx.date.toLocaleDateString('es-ES'),
+  amount: Math.abs(tx.amount),
+  currency: tx.currency || 'EUR'
           }))
         });
       }
@@ -341,12 +344,13 @@ export function ImportWizard({
         )}
 
         {!isLoading && step === 'mapping' && (
-          <ColumnMapper
-            columns={columns}
-            previewRows={previewRows}
-            onMappingComplete={handleMappingComplete}
-          />
-        )}
+  <ColumnMapper
+    columns={columns}
+    previewRows={previewRows}
+    workspaceId={slackWorkspaceId}  // 👈 AÑADIR ESTA LÍNEA
+    onMappingComplete={handleMappingComplete}
+  />
+)}
 
         {!isLoading && step === 'manual-select' && (
           <ManualSubscriptionSelector

@@ -14,7 +14,7 @@ export interface SubscriptionPreview {
   nextRenewal: string;
   occurrences: number;
   confidence: string;
-  transactions: Array<{ date: string; amount: number }>;
+  transactions: Array<{ date: string; amount: number; currency: string }>;
 }
 
 export interface DetectSubscriptionsRequest {

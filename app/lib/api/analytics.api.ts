@@ -13,6 +13,8 @@ export interface DashboardData {
   subscriptionsWithoutUsers: SubscriptionWithoutUsers[];
   upcomingRenewals: UpcomingRenewal[];
   projectExpenses: ProjectExpense[];
+  convertedTotal: number;
+  preferredCurrency: string;
 }
 
 class AnalyticsApi {
