@@ -4,6 +4,7 @@ export interface AppSettingsPrimitives {
   id: number;
   slackWorkspaceId: string;
   daysBeforeRenewal: number;
+  preferredCurrency: string;
   isActive: boolean;
   updatedAt: Date;
 }
@@ -13,11 +14,20 @@ export class AppSettings {
     private readonly _id: number,
     private readonly _slackWorkspaceId: string,
     private _daysBeforeRenewal: number,
+    private _preferredCurrency: string,
     private _isActive: boolean,
     private _updatedAt: Date
   ) {
     this.validateWorkspaceId(_slackWorkspaceId);
     this.validateDaysBeforeRenewal(_daysBeforeRenewal);
+    this.validateCurrency(_preferredCurrency);
+  }
+
+  private validateCurrency(currency: string): void {
+    const validCurrencies = ['EUR', 'USD', 'GBP'];
+    if (!validCurrencies.includes(currency)) {
+    throw new Error(`Currency must be one of: ${validCurrencies.join(', ')}`);
+    }
   }
 
   private validateWorkspaceId(workspaceId: string): void {
@@ -38,6 +48,10 @@ export class AppSettings {
     return this._daysBeforeRenewal;
   }
 
+  get preferredCurrency(): string {
+  return this._preferredCurrency;
+}
+
   get isActive(): boolean {
     return this._isActive;
   }
@@ -56,6 +70,12 @@ export class AppSettings {
     this._daysBeforeRenewal = days;
     this._updatedAt = new Date();
   }
+
+  updatePreferredCurrency(currency: string): void {
+  this.validateCurrency(currency);
+  this._preferredCurrency = currency;
+  this._updatedAt = new Date();
+}
 
   activate(): void {
     this._isActive = true;
@@ -78,9 +98,10 @@ export class AppSettings {
 
   static create(
     workspaceId: string,
-    daysBeforeRenewal: number = SETTINGS_CONSTANTS.DEFAULT_DAYS_BEFORE_RENEWAL
+    daysBeforeRenewal: number = SETTINGS_CONSTANTS.DEFAULT_DAYS_BEFORE_RENEWAL,
+    preferredCurrency: string = 'EUR'
   ): AppSettings {
-    return new AppSettings(0, workspaceId, daysBeforeRenewal, true, new Date());
+    return new AppSettings(0, workspaceId, daysBeforeRenewal, preferredCurrency, true, new Date());
   }
 
   static fromPrimitives(primitives: AppSettingsPrimitives): AppSettings {
@@ -88,8 +109,9 @@ export class AppSettings {
       primitives.id,
       primitives.slackWorkspaceId,
       primitives.daysBeforeRenewal,
+      primitives.preferredCurrency,
       primitives.isActive,
-      primitives.updatedAt
+      primitives.updatedAt,
     );
   }
 
@@ -98,6 +120,7 @@ export class AppSettings {
       id: this._id,
       slackWorkspaceId: this._slackWorkspaceId,
       daysBeforeRenewal: this._daysBeforeRenewal,
+      preferredCurrency: this._preferredCurrency,
       isActive: this._isActive,
       updatedAt: this._updatedAt,
     };

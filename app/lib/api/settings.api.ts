@@ -4,6 +4,7 @@ export interface SettingsDTO {
   id?: number;
   slackWorkspaceId?: string;
   daysBeforeRenewal: number;
+  preferredCurrency: string;
   updatedAt?: Date;
 }
 
@@ -14,10 +15,11 @@ class SettingsApi {
     });
   }
 
-  async update(workspaceId: string, daysBeforeRenewal: number): Promise<SettingsDTO> {
+  async update(workspaceId: string, daysBeforeRenewal: number, preferredCurrency: string): Promise<SettingsDTO> {
     return apiClient.post<SettingsDTO>('/settings', {
       workspaceId,
       daysBeforeRenewal,
+      preferredCurrency,
     });
   }
 }

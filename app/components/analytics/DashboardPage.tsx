@@ -5,6 +5,8 @@ import { AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
 import type { User, PageType } from '@/app/types';
 import { analyticsApi, type DashboardData } from '@/app/lib/api';
 import { getCurrencySymbol } from '@/app/utils/currency';
+import { settingsApi } from '@/app/lib/api';
+import { CurrencyConverter } from '@/src/shared/domain/CurrencyConverter';
 
 interface DashboardPageProps {
   currentUser: User;
@@ -19,15 +21,54 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
+const [preferredCurrency, setPreferredCurrency] = useState<string>('EUR');
+const [convertedTotal, setConvertedTotal] = useState<number>(0);
 
-  useEffect(() => {
-    analyticsApi.getDashboard(currentUser.slackWorkspaceId)
-      .then(setData)
-      .catch(() => {})
-      .finally(() => setIsLoading(false));
-  }, [currentUser.slackWorkspaceId]);
+const convertTotalAmount = async (
+  currencyTotals: { currency: string; totalMonthly: number }[],
+  targetCurrency: string
+): Promise<number> => {
+  let total = 0;
+  
+  for (const currencyTotal of currencyTotals) {
+    try {
+      const converted = await CurrencyConverter.convert(
+        currencyTotal.totalMonthly,
+        currencyTotal.currency,
+        targetCurrency
+      );
+      total += converted;
+    } catch {
+      total += currencyTotal.totalMonthly;
+    }
+  }
+  
+  return total;
+};
 
-  useEffect(() => {
+useEffect(() => {
+  if (currentUser?.slackWorkspaceId) {
+    setIsLoading(true);
+    Promise.all([
+      analyticsApi.getDashboard(currentUser.slackWorkspaceId),
+      settingsApi.get(currentUser.slackWorkspaceId)
+    ])
+      .then(async ([dashboardData, settings]) => {
+        setData(dashboardData);
+        setPreferredCurrency(settings.preferredCurrency || 'EUR');
+        
+        const total = await convertTotalAmount(dashboardData.currencyTotals, settings.preferredCurrency || 'EUR');
+        setConvertedTotal(total);
+        
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
+      });
+  }
+}, [currentUser]);
+
+useEffect(() => {
   const handleClickOutside = (event: MouseEvent) => {
     if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
       setIsProjectDropdownOpen(false);
@@ -86,22 +127,23 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
       </div>
 
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-4 border-green-400 p-8 shadow-xl">
-        <div className="text-sm font-bold text-gray-600 mb-2">TOTAL MONTHLY SPENDING</div>
-        <div className="flex items-baseline gap-4 flex-wrap">
-          {data.currencyTotals.map((total, idx) => (
-            <div key={total.currency} className="flex items-baseline gap-2">
-              {idx > 0 && <span className="text-2xl font-black text-gray-400">+</span>}
-              <span className="text-5xl font-black text-gray-900">
-                {getCurrencySymbol(total.currency)}{total.totalMonthly.toFixed(2)}
-              </span>
-              <span className="text-xl font-bold text-gray-600">{total.currency}</span>
-            </div>
-          ))}
-        </div>
-        <div className="text-sm font-semibold text-gray-600 mt-2">
-          {data.currencyTotals.reduce((sum, t) => sum + t.subscriptionCount, 0)} active subscriptions
-        </div>
-      </div>
+  <div className="text-sm font-bold text-gray-600 mb-2">TOTAL MONTHLY SPENDING</div>
+  <div className="flex items-baseline gap-2">
+    <span className="text-5xl font-black text-gray-900">
+      {CurrencyConverter.getCurrencySymbol(preferredCurrency)}
+      {convertedTotal.toFixed(2)}
+    </span>
+    <span className="text-xl font-bold text-gray-600">{preferredCurrency}</span>
+  </div>
+  {data.currencyTotals.some(t => t.currency !== preferredCurrency) && (
+    <div className="text-xs text-gray-500 mt-2">
+      ℹ️ Amounts converted to your preferred currency
+    </div>
+  )}
+  <div className="text-sm font-semibold text-gray-600 mt-2">
+    {data.currencyTotals.reduce((sum, t) => sum + t.subscriptionCount, 0)} active subscriptions
+  </div>
+</div>
 
 <div className={`bg-white rounded-2xl border-4 p-6 shadow-lg ${
         readyToCancelCount === 0 && lowUsageCount === 0 ? 'border-green-400' : 'border-red-400'

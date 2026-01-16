@@ -18,7 +18,7 @@ export async function GET(request: Request) {
     const settingsRepository = container.resolve<SettingsRepository>('SettingsRepository');
     const settings = await settingsRepository.findByWorkspace(workspaceId);
 
-    return NextResponse.json(settings || { daysBeforeRenewal: 7 });
+    return NextResponse.json(settings || { daysBeforeRenewal: 7, preferredCurrency: 'EUR' });
   } catch (error) {
     return handleApiError(error, 'fetch settings', 'Failed to fetch settings');
   }
@@ -27,7 +27,7 @@ export async function GET(request: Request) {
 export async function POST(request: Request) {
   try {
     const body = await request.json();
-    const { workspaceId, daysBeforeRenewal } = body;
+    const { workspaceId, daysBeforeRenewal, preferredCurrency } = body;
 
     if (!workspaceId) {
       return createValidationError('Workspace ID is required');
@@ -37,8 +37,12 @@ export async function POST(request: Request) {
       return createValidationError('Days before renewal must be between 1 and 60');
     }
 
+    if (preferredCurrency && !['EUR', 'USD', 'GBP'].includes(preferredCurrency)) {
+      return createValidationError('Currency must be EUR, USD, or GBP');
+    }
+
     const settingsRepository = container.resolve<SettingsRepository>('SettingsRepository');
-    const settings = await settingsRepository.upsert(workspaceId, daysBeforeRenewal);
+    const settings = await settingsRepository.upsert(workspaceId, daysBeforeRenewal, preferredCurrency);
 
     return NextResponse.json(settings);
   } catch (error) {
