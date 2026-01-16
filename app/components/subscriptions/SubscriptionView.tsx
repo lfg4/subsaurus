@@ -1,6 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
 import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight, Send } from 'lucide-react';
 import type { Subscription, User, PageType } from '@/app/types';
 import { subscriptionsApi, usersApi, usageChecksApi, type SlackUserDTO } from '@/app/lib/api';
@@ -24,6 +25,7 @@ export function SubscriptionView({
   setSelectedCheckId,
   currentUser 
 }: SubscriptionViewProps) {
+  const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [assignedUsers, setAssignedUsers] = useState<SlackUserDTO[]>([]);
   const [usageChecks, setUsageChecks] = useState<any[]>([]);
@@ -61,7 +63,7 @@ export function SubscriptionView({
     setIsDeleting(true);
     try {
       await subscriptionsApi.delete(subscriptionId);
-      setCurrentPage('subscriptions');
+      router.push('/subscriptions');
     } catch (error) {
       alert('Failed to delete subscription');
       setIsDeleting(false);
@@ -69,13 +71,11 @@ export function SubscriptionView({
   };
 
   const handleEdit = () => {
-    setSelectedSubscriptionId(subscriptionId);
-    setCurrentPage('subscription-edit');
+    router.push(`/subscriptions/${subscriptionId}/edit`);
   };
 
   const handleViewCheck = (checkId: number) => {
-    setSelectedCheckId(checkId);
-    setCurrentPage('check-detail');
+    router.push(`/checks/${checkId}`);
   };
 
   const handleRequestUsers = async () => {
@@ -134,7 +134,7 @@ export function SubscriptionView({
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => setCurrentPage('subscriptions')}
+            onClick={() => router.push('/subscriptions')}
             className="p-3 hover:bg-white/50 rounded-xl transition-all border-2 border-green-300 bg-white"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
