@@ -1,28 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronRight, Plus, X } from 'lucide-react';
-import type { Subscription } from '@/app/types';
-import type { User } from '@/app/types';
-import { formatDate } from '@/app/utils/formatDate';
-import { subscriptionsApi, usageChecksApi, usersApi, type UpdateSubscriptionDTO } from '@/app/lib/api';
+import { ChevronRight, Plus } from 'lucide-react';
+import type { Subscription, User, PageType } from '@/app/types';
+import { subscriptionsApi, usersApi, type UpdateSubscriptionDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
 import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
 import { toast } from 'sonner';
 
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
-
-import { UsageCheckStatus } from '@/src/types/enums';
-
-
-interface SubscriptionDetailProps {
+interface SubscriptionEditProps {
   subscriptionId: number;
   setCurrentPage: (page: PageType) => void;
-  setSelectedCheckId: (id: number) => void;
   currentUser: User;
 }
 
-export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelectedCheckId, currentUser }: SubscriptionDetailProps) {
+export function SubscriptionEdit({ subscriptionId, setCurrentPage, currentUser }: SubscriptionEditProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [formData, setFormData] = useState({
@@ -31,37 +23,36 @@ export function SubscriptionDetail({ subscriptionId, setCurrentPage, setSelected
     renewalCycle: RenewalCycle.MONTHLY,
     renewalDate: '',
     costAmount: 0,
-    costCurrency: 'EUR'
+    costCurrency: 'EUR',
+    notes: ''
   });
   const [isSaving, setIsSaving] = useState(false);
-  const [usageChecks, setUsageChecks] = useState<any[]>([]);
   const [slackUsers, setSlackUsers] = useState<any[]>([]);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
 
-useEffect(() => {
-  Promise.all([
-    subscriptionsApi.getById(subscriptionId),
-    usageChecksApi.getAll(subscriptionId),
-    usersApi.getAll(currentUser.slackWorkspaceId)
-  ])
-    .then(([data, checksData, usersData]) => {
-      setSubscription(data);
-      setFormData({
-        name: data.name,
-        project: data.projects?.[0] || '',
-        renewalCycle: data.renewalCycle,
-        renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
-        costAmount: data.costAmount,
-        costCurrency: data.costCurrency
+  useEffect(() => {
+    Promise.all([
+      subscriptionsApi.getById(subscriptionId),
+      usersApi.getAll(currentUser.slackWorkspaceId)
+    ])
+      .then(([data, usersData]) => {
+        setSubscription(data);
+        setFormData({
+          name: data.name,
+          project: data.projects?.[0] || '',
+          renewalCycle: data.renewalCycle,
+          renewalDate: data.renewalDate ? new Date(data.renewalDate).toISOString().split('T')[0] : '',
+          costAmount: data.costAmount,
+          costCurrency: data.costCurrency,
+          notes: data.notes || ''
+        });
+        setSlackUsers(Array.isArray(usersData) ? usersData : []);
+        setIsLoading(false);
+      })
+      .catch(() => {
+        setIsLoading(false);
       });
-      setUsageChecks(Array.isArray(checksData) ? checksData : []);
-      setSlackUsers(Array.isArray(usersData) ? usersData : []);
-      setIsLoading(false);
-    })
-    .catch(() => {
-      setIsLoading(false);
-    });
-}, [subscriptionId]);
+  }, [subscriptionId, currentUser.slackWorkspaceId]);
 
 const getUserInfo = (slackUserId: string) => {
   return slackUsers.find(u => u.slackUserId === slackUserId);
@@ -80,11 +71,6 @@ const handleSave = async () => {
       setIsSaving(false);
     }
 };
-
-  const handleViewCheck = (checkId: number) => {
-    setSelectedCheckId(checkId);
-    setCurrentPage('check-detail');
-  };
 
 const handleAddUsers = async (newUserIds: string[]) => {
   const updatedUserIds = [
@@ -222,6 +208,17 @@ const getAvailableUsers = () => {
             </select>
           </div>
         </div>
+        <div className="mt-6">
+          <label htmlFor={`notes-${subscription.id}`} className="block text-sm font-bold text-gray-700 mb-2">📝 Notes</label>
+          <textarea
+            id={`notes-${subscription.id}`}
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            placeholder="Add any additional notes about this subscription..."
+            rows={4}
+            className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold resize-none"
+          />
+        </div>
         <div className="mt-6 flex gap-3">
           <button 
             type="button"
@@ -293,50 +290,6 @@ const getAvailableUsers = () => {
           </div>
         </div>
 
-      {}
-      <div className="bg-white rounded-2xl border-4 border-green-400 p-6 shadow-xl">
-        <h2 className="text-2xl font-bold text-gray-900 mb-4 flex items-center gap-2">
-          <span className="text-2xl">📊</span>
-          Usage checks history
-        </h2>
-        <div className="space-y-3">
-          {usageChecks.map(check => (
-            <div key={check.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
-              <div>
-                <div className="font-bold text-gray-900">
-                  {formatDate(check.periodStart)} - {formatDate(check.periodEnd)}
-                </div>
-                <div className="text-sm text-gray-600 font-semibold">
-                  Sent: {formatDate(check.sendAt)}
-                </div>
-              </div>
-              <div className="flex items-center gap-4">
-                <span className={`px-3 py-1 text-sm font-black rounded-full border-2 ${
-                  check.status === UsageCheckStatus.SENT ? 'bg-blue-100 text-blue-700 border-blue-300' :
-                  check.status === UsageCheckStatus.CLOSED ? 'bg-gray-100 text-gray-600 border-gray-300' :
-                  'bg-yellow-100 text-yellow-700 border-yellow-300'
-                }`}>
-                  {check.status}
-                </span>
-                <span className="text-sm text-gray-600 font-bold">{check.responsesCount} responses</span>
-                <button 
-                  type="button" 
-                 onClick={() => handleViewCheck(check.id)}
-                  className="text-green-600 hover:text-green-700 transform hover:scale-125 transition"
-                >
-                  <ChevronRight className="w-5 h-5" />
-                </button>
-              </div>
-            </div>
-          ))}
-          {usageChecks.length === 0 && (
-            <div className="text-center py-12">
-              <div className="text-6xl mb-3">🦖</div>
-              <div className="text-gray-500 font-semibold">No usage checks for this subscription</div>
-            </div>
-          )}
-        </div>
-      </div>
       <AddUsersModal
   isOpen={showAddUserModal}
   onClose={() => setShowAddUserModal(false)}

@@ -6,6 +6,7 @@ export { importApi } from './import.api';
 export { settingsApi } from './settings.api';
 export { usersApi } from './users.api';
 export { authApi } from './auth.api';
+export { analyticsApi } from './analytics.api';
 
 export type {
   CreateSubscriptionDTO,
@@ -33,3 +34,6 @@ export type {
   SessionDTO,
 } from './auth.api';
 
+export type {
+  DashboardData,
+} from './analytics.api';

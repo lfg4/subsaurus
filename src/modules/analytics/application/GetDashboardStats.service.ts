@@ -10,7 +10,7 @@ import type {
   UpcomingRenewal,
   ProjectExpense,
 } from '../domain/types';
-import { UsageResponseType } from '@/src/types/enums';
+import { RenewalCycle, UsageResponseType } from '@/src/types/enums';
 
 export class GetDashboardStatsService {
   constructor(
@@ -42,15 +42,15 @@ export class GetDashboardStatsService {
     const cycle = subscription.renewalCycle;
 
     switch (cycle) {
-      case 'MONTHLY':
+      case RenewalCycle.MONTHLY:
         return amount;
-      case 'YEARLY':
+      case RenewalCycle.YEARLY:
         return amount / 12;
-      case 'QUARTERLY':
+      case RenewalCycle.QUARTERLY:
         return amount / 3;
-      case 'SEMESTRAL':
+      case RenewalCycle.SEMESTRAL:
         return amount / 6;
-      case 'CUSTOM':
+      case RenewalCycle.CUSTOM:
         return amount;
       default:
         return amount;
@@ -84,13 +84,13 @@ export class GetDashboardStatsService {
     const healthIssues: SubscriptionHealth[] = [];
 
     for (const sub of subscriptions) {
-      const usageChecks = await this.usageCheckRepository.findBySubscriptionId(sub.id.value);
+      const usageChecks = await this.usageCheckRepository.findBySubscriptionId(sub.id);
       
       const sentChecks = usageChecks.filter(uc => uc.status === 'SENT');
       if (sentChecks.length === 0) continue;
 
       const lastCheck = sentChecks[0];
-      const responses = await this.usageResponseRepository.findByUsageCheck(lastCheck.id.value);
+      const responses = await this.usageResponseRepository.findByUsageCheck(lastCheck.id);
 
       const yesCount = responses.filter(r => r.response === UsageResponseType.YES).length;
       const noCount = responses.filter(r => r.response === UsageResponseType.NO).length;
@@ -104,7 +104,7 @@ export class GetDashboardStatsService {
 
       if (noCount > 0 && littleCount === 0) {
         healthIssues.push({
-          id: sub.id.value,
+          id: sub.id,
           name: sub.name,
           monthlyEquivalent: monthlyEquiv,
           currency,
@@ -117,7 +117,7 @@ export class GetDashboardStatsService {
         });
       } else if (littleCount > 0) {
         healthIssues.push({
-          id: sub.id.value,
+          id: sub.id,
           name: sub.name,
           monthlyEquivalent: monthlyEquiv,
           currency,
@@ -156,7 +156,7 @@ export class GetDashboardStatsService {
       .map(sub => {
         const { currency } = sub.cost.toPrimitives();
         return {
-          id: sub.id.value,
+          id: sub.id,
           name: sub.name,
           monthlyEquivalent: Math.round(this.getMonthlyEquivalent(sub) * 100) / 100,
           currency,

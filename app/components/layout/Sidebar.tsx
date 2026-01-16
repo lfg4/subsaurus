@@ -1,8 +1,7 @@
 'use client';
 
 import { FileText, Check, Settings, Upload, BarChart3 } from 'lucide-react';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings' | 'import';
+import type { PageType } from '@/app/types';
 
 interface SidebarProps {
   currentPage: PageType;

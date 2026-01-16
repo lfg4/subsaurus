@@ -5,9 +5,7 @@ import { formatDate } from '@/app/utils/formatDate';
 import { useState, useEffect } from 'react';
 import { usageChecksApi } from '@/app/lib/api';
 import { UsageCheckStatus } from '@/src/types/enums';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
-
+import type { PageType } from '@/app/types';
 
 interface UsageChecksProps {
   setCurrentPage: (page: PageType) => void;

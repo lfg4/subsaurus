@@ -6,9 +6,7 @@ import { subscriptionsApi, usersApi, type SlackUserDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
 import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
 import { toast } from 'sonner';
-import type { User } from '@/app/types';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+import type { User, PageType } from '@/app/types';
 
 interface NewSubscriptionProps {
   setCurrentPage: (page: PageType) => void;
@@ -22,7 +20,8 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
     renewalCycle: RenewalCycle.MONTHLY,
     renewalDate: '',
     costAmount: 0,
-    costCurrency: 'EUR'
+    costCurrency: 'EUR',
+    notes: ''
   });
   const [isSaving, setIsSaving] = useState(false);
   const [slackUsers, setSlackUsers] = useState<SlackUserDTO[]>([]);
@@ -172,6 +171,18 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
               <option value="GBP">£ GBP</option>
             </select>
           </div>
+        </div>
+
+        <div className="mt-6">
+          <label htmlFor="notes" className="block text-sm font-bold text-gray-700 mb-2">📝 Notes</label>
+          <textarea
+            id="notes"
+            value={formData.notes}
+            onChange={(e) => setFormData({...formData, notes: e.target.value})}
+            placeholder="Add any additional notes about this subscription..."
+            rows={4}
+            className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold resize-none"
+          />
         </div>
 
         <div className="mt-6 pt-6 border-t-2 border-gray-200">

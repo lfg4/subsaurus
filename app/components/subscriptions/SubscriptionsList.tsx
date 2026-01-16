@@ -2,16 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
-import type { Subscription } from '@/app/types';
+import type { Subscription, User, PageType } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
 import { subscriptionsApi, usageChecksApi } from '@/app/lib/api';
 import { toast } from 'sonner';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'subscription-view' | 'checks' | 'check-detail' | 'settings' | 'import' | 'dashboard';
-
-import type { User } from '@/app/types';
 
 interface SubscriptionsListProps {
   searchTerm: string;
@@ -118,7 +114,7 @@ useEffect(() => {
 
   const handleViewDetail = (id: number) => {
     setSelectedSubscriptionId(id);
-    setCurrentPage('subscription-detail');
+    setCurrentPage('subscription-edit');
   };
 
   const handleDelete = (id: number) => {

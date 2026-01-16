@@ -17,6 +17,7 @@ export interface CreateSubscriptionDTO {
   renewalDate: string;
   slackUserIds: string[];
   projects?: string[];
+  notes?: string;
 }
 
 export class CreateSubscriptionService {
@@ -38,6 +39,7 @@ export class CreateSubscriptionService {
       renewalDate: new Date(data.renewalDate),
       slackUserIds: data.slackUserIds,
       projects: data.projects,
+      notes: data.notes,
     });
 
     const daysBeforeRenewal = await this.settingsRepository.getDaysBeforeRenewal(data.slackWorkspaceId);

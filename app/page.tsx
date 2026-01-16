@@ -1,14 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import type { User } from '@/app/types';
+import type { User, PageType } from '@/app/types';
 import { authApi } from '@/app/lib/api';
 import { isDevelopmentMode, mockDevUser } from '@/app/lib/dev-mode';
 import { LoginPage } from '@/app/components/auth/LoginPage';
 import { Sidebar } from '@/app/components/layout/Sidebar';
 import { Header } from '@/app/components/layout/Header';
 import { SubscriptionsList } from '@/app/components/subscriptions/SubscriptionsList';
-import { SubscriptionDetail } from '@/app/components/subscriptions/SubscriptionDetail';
+import { SubscriptionEdit } from '@/app/components/subscriptions/SubscriptionEdit';
 import { SubscriptionView } from '@/app/components/subscriptions/SubscriptionView';
 import { UsageChecks } from '@/app/components/checks/UsageChecks';
 import { CheckDetail } from '@/app/components/checks/CheckDetail';
@@ -17,7 +17,7 @@ import { ImportWizard } from '@/app/components/import/ImportWizard';
 import { DashboardPage } from '@/app/components/analytics/DashboardPage';
 
 export default function App() {
-  const [currentPage, setCurrentPage] = useState<'subscriptions' | 'subscription-detail' | 'subscription-view' | 'checks' | 'check-detail' | 'settings' | 'import' | 'dashboard'>('dashboard');
+  const [currentPage, setCurrentPage] = useState<PageType>('dashboard');
   const [currentUser, setCurrentUser] = useState<User | null>(null);
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [selectedSubscriptionId, setSelectedSubscriptionId] = useState<number | null>(null);
@@ -108,22 +108,22 @@ export default function App() {
               currentUser={currentUser}
             />
           )}
-          {currentPage === 'subscription-detail' && selectedSubscriptionId && currentUser && (
-            <SubscriptionDetail
+          {currentPage === 'subscription-edit' && selectedSubscriptionId && currentUser && (
+            <SubscriptionEdit
               subscriptionId={selectedSubscriptionId}
               setCurrentPage={setCurrentPage}
-              setSelectedCheckId={setSelectedCheckId}
               currentUser={currentUser}
             />
           )}
           {currentPage === 'subscription-view' && selectedSubscriptionId && currentUser && (
-  <SubscriptionView
-    subscriptionId={selectedSubscriptionId}
-    setCurrentPage={setCurrentPage}
-    setSelectedSubscriptionId={setSelectedSubscriptionId}
-    currentUser={currentUser}
-  />
-)}
+            <SubscriptionView
+              subscriptionId={selectedSubscriptionId}
+              setCurrentPage={setCurrentPage}
+              setSelectedSubscriptionId={setSelectedSubscriptionId}
+              setSelectedCheckId={setSelectedCheckId}
+              currentUser={currentUser}
+            />
+          )}
           {currentPage === 'checks' && currentUser && (
             <UsageChecks 
               setCurrentPage={setCurrentPage}

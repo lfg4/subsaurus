@@ -1,41 +1,41 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder } from 'lucide-react';
-import type { Subscription, User } from '@/app/types';
-import { subscriptionsApi, usersApi } from '@/app/lib/api';
+import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight } from 'lucide-react';
+import type { Subscription, User, PageType } from '@/app/types';
+import { subscriptionsApi, usersApi, usageChecksApi, type SlackUserDTO } from '@/app/lib/api';
+import { getCurrencySymbol } from '@/app/utils/currency';
+import { formatDate } from '@/app/utils/formatDate';
+import { UsageCheckStatus } from '@/src/types/enums';
 
 interface SubscriptionViewProps {
   subscriptionId: number;
-  setCurrentPage: (page: 'subscriptions' | 'subscription-detail' | 'subscription-view' | 'checks' | 'check-detail' | 'settings' | 'import' | 'dashboard') => void;
+  setCurrentPage: (page: PageType) => void;
   setSelectedSubscriptionId: (id: number) => void;
+  setSelectedCheckId: (id: number) => void;
   currentUser: User;
-}
-
-interface SlackUser {
-  slackUserId: string;
-  displayName: string;
-  email: string;
-  avatarUrl?: string;
 }
 
 export function SubscriptionView({ 
   subscriptionId, 
   setCurrentPage,
   setSelectedSubscriptionId,
+  setSelectedCheckId,
   currentUser 
 }: SubscriptionViewProps) {
   const [subscription, setSubscription] = useState<Subscription | null>(null);
-  const [assignedUsers, setAssignedUsers] = useState<SlackUser[]>([]);
+  const [assignedUsers, setAssignedUsers] = useState<SlackUserDTO[]>([]);
+  const [usageChecks, setUsageChecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
   useEffect(() => {
     Promise.all([
       subscriptionsApi.getById(subscriptionId),
-      usersApi.getAll(currentUser.slackWorkspaceId)
+      usersApi.getAll(currentUser.slackWorkspaceId),
+      usageChecksApi.getAll(subscriptionId)
     ])
-      .then(([subData, usersData]) => {
+      .then(([subData, usersData, checksData]) => {
         setSubscription(subData);
         
         // Filtrar los usuarios asignados
@@ -43,6 +43,7 @@ export function SubscriptionView({
           subData.slackUserIds?.includes(user.slackUserId)
         );
         setAssignedUsers(assigned);
+        setUsageChecks(Array.isArray(checksData) ? checksData : []);
         setIsLoading(false);
       })
       .catch(() => {
@@ -67,7 +68,12 @@ export function SubscriptionView({
 
   const handleEdit = () => {
     setSelectedSubscriptionId(subscriptionId);
-    setCurrentPage('subscription-detail');
+    setCurrentPage('subscription-edit');
+  };
+
+  const handleViewCheck = (checkId: number) => {
+    setSelectedCheckId(checkId);
+    setCurrentPage('check-detail');
   };
 
   if (isLoading) {
@@ -87,15 +93,6 @@ export function SubscriptionView({
       </div>
     );
   }
-
-  const getCurrencySymbol = (currency: string) => {
-    const symbols: Record<string, string> = {
-      EUR: '€',
-      USD: '$',
-      GBP: '£',
-    };
-    return symbols[currency] || currency;
-  };
 
   const getBillingCycleLabel = (cycle: string) => {
     const labels: Record<string, string> = {
@@ -264,7 +261,7 @@ export function SubscriptionView({
 
       {/* Notes Section - Full Width */}
       {subscription.notes && (
-        <div className="bg-white rounded-2xl border-4 border-yellow-400 p-8 shadow-xl">
+        <div className="bg-white rounded-2xl border-4 border-yellow-400 p-8 shadow-xl mb-6">
           <h2 className="text-2xl font-black text-gray-900 mb-4">📝 Notes</h2>
           <div className="bg-yellow-50 rounded-xl p-6 border-2 border-yellow-300">
             <div className="text-gray-700 font-semibold whitespace-pre-wrap text-lg leading-relaxed">
@@ -273,6 +270,51 @@ export function SubscriptionView({
           </div>
         </div>
       )}
+
+      {/* Usage Checks Section - Full Width */}
+      <div className="bg-white rounded-2xl border-4 border-green-400 p-8 shadow-xl">
+        <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-2">
+          <span className="text-2xl">📊</span>
+          Usage checks history
+        </h2>
+        <div className="space-y-3">
+          {usageChecks.map(check => (
+            <div key={check.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-green-50 to-emerald-50 rounded-xl border-2 border-green-200">
+              <div>
+                <div className="font-bold text-gray-900">
+                  {formatDate(check.periodStart)} - {formatDate(check.periodEnd)}
+                </div>
+                <div className="text-sm text-gray-600 font-semibold">
+                  Sent: {formatDate(check.sendAt)}
+                </div>
+              </div>
+              <div className="flex items-center gap-4">
+                <span className={`px-3 py-1 text-sm font-black rounded-full border-2 ${
+                  check.status === UsageCheckStatus.SENT ? 'bg-blue-100 text-blue-700 border-blue-300' :
+                  check.status === UsageCheckStatus.CLOSED ? 'bg-gray-100 text-gray-600 border-gray-300' :
+                  'bg-yellow-100 text-yellow-700 border-yellow-300'
+                }`}>
+                  {check.status}
+                </span>
+                <span className="text-sm text-gray-600 font-bold">{check.responsesCount} responses</span>
+                <button 
+                  type="button" 
+                  onClick={() => handleViewCheck(check.id)}
+                  className="text-green-600 hover:text-green-700 transform hover:scale-125 transition"
+                >
+                  <ChevronRight className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          ))}
+          {usageChecks.length === 0 && (
+            <div className="text-center py-12">
+              <div className="text-6xl mb-3">🦖</div>
+              <div className="text-gray-500 font-semibold">No usage checks for this subscription</div>
+            </div>
+          )}
+        </div>
+      </div>
     </div>
   );
 }

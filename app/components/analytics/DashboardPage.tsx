@@ -1,63 +1,15 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { AlertTriangle, Users, Calendar, BarChart3 } from 'lucide-react';
-import type { User } from '@/app/types';
+import { AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
+import type { User, PageType } from '@/app/types';
+import { analyticsApi, type DashboardData } from '@/app/lib/api';
+import { getCurrencySymbol } from '@/app/utils/currency';
 
 interface DashboardPageProps {
   currentUser: User;
-  setCurrentPage: (page: 'subscriptions' | 'subscription-detail' | 'subscription-view' | 'checks' | 'check-detail' | 'settings' | 'import' | 'dashboard') => void;
+  setCurrentPage: (page: PageType) => void;
   setSelectedSubscriptionId: (id: number) => void;
-}
-
-interface CurrencyTotal {
-  currency: string;
-  totalMonthly: number;
-  subscriptionCount: number;
-}
-
-interface SubscriptionHealth {
-  id: number;
-  name: string;
-  monthlyEquivalent: number;
-  currency: string;
-  status: 'ready-to-cancel' | 'low-usage';
-  reason: string;
-  yesCount: number;
-  noCount: number;
-  littleCount: number;
-  noResponseCount: number;
-}
-
-interface SubscriptionWithoutUsers {
-  id: number;
-  name: string;
-  monthlyEquivalent: number;
-  currency: string;
-}
-
-interface UpcomingRenewal {
-  id: number;
-  name: string;
-  amount: number;
-  currency: string;
-  renewalDate: string;
-  daysUntil: number;
-}
-
-interface ProjectExpense {
-  project: string;
-  currency: string;
-  monthlyAmount: number;
-  subscriptionCount: number;
-}
-
-interface DashboardData {
-  currencyTotals: CurrencyTotal[];
-  subscriptionHealth: SubscriptionHealth[];
-  subscriptionsWithoutUsers: SubscriptionWithoutUsers[];
-  upcomingRenewals: UpcomingRenewal[];
-  projectExpenses: ProjectExpense[];
 }
 
 export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscriptionId }: DashboardPageProps) {
@@ -69,16 +21,11 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
   const dropdownRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-  fetch(`/api/analytics/dashboard?workspaceId=${currentUser.slackWorkspaceId}`)
-    .then(res => res.json())
-    .then(response => {
-      console.log('Full dashboard response:', response);
-      console.log('Upcoming renewals:', response.upcomingRenewals);
-      setData(response);
-    })
-    .catch(() => {})
-    .finally(() => setIsLoading(false));
-}, [currentUser.slackWorkspaceId]);
+    analyticsApi.getDashboard(currentUser.slackWorkspaceId)
+      .then(setData)
+      .catch(() => {})
+      .finally(() => setIsLoading(false));
+  }, [currentUser.slackWorkspaceId]);
 
   useEffect(() => {
   const handleClickOutside = (event: MouseEvent) => {
@@ -114,28 +61,9 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
     );
   }
 
-  const getCurrencySymbol = (currency: string) => {
-    const symbols: Record<string, string> = {
-      EUR: '€',
-      USD: '$',
-      GBP: '£',
-    };
-    return symbols[currency] || currency;
-  };
-
   const readyToCancelCount = data.subscriptionHealth.filter(s => s.status === 'ready-to-cancel').length;
   const lowUsageCount = data.subscriptionHealth.filter(s => s.status === 'low-usage').length;
   const filteredHealth = data.subscriptionHealth.filter(s => s.status === healthTab);
-
-  const toggleProject = (project: string) => {
-    const newSelected = new Set(selectedProjects);
-    if (newSelected.has(project)) {
-      newSelected.delete(project);
-    } else {
-      newSelected.add(project);
-    }
-    setSelectedProjects(newSelected);
-  };
 
   const filteredProjects = selectedProjects.size === 0 
     ? data.projectExpenses 
@@ -277,10 +205,9 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
       key={renewal.id}
       type="button"
       onClick={() => {
-  console.log('Clicking renewal:', renewal.id, renewal.name);
-  setSelectedSubscriptionId(renewal.id);
-  setCurrentPage('subscription-view');
-}}
+        setSelectedSubscriptionId(renewal.id);
+        setCurrentPage('subscription-view');
+      }}
       className="w-full flex justify-between items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all cursor-pointer"
     >
                 <div>

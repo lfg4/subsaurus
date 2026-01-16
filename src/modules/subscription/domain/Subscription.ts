@@ -21,6 +21,7 @@ export class Subscription extends Entity<number> {
     private _renewalDate: Date,
     private _slackUserIds: string[],
     private _projects: string[],
+    private _notes: string | null,
     public readonly createdAt: Date,
     private _updatedAt: Date
   ) {
@@ -47,6 +48,10 @@ export class Subscription extends Entity<number> {
     return this._projects;
   }
 
+  get notes(): string | null {
+    return this._notes;
+  }
+
   get updatedAt(): Date {
     return this._updatedAt;
   }
@@ -61,6 +66,7 @@ export class Subscription extends Entity<number> {
     renewalDate: Date;
     slackUserIds: string[];
     projects?: string[];
+    notes?: string | null;
   }): Subscription {
     if (!data.name || data.name.trim().length === 0) {
       throw new Error('Subscription name cannot be empty');
@@ -80,6 +86,7 @@ export class Subscription extends Entity<number> {
       data.renewalDate,
       data.slackUserIds,
       data.projects || [],
+      data.notes || null,
       new Date(),
       new Date()
     );
@@ -96,6 +103,7 @@ export class Subscription extends Entity<number> {
     renewalDate: Date;
     slackUserIds: string[];
     projects: string[];
+    notes?: string | null;
     createdAt: Date;
     updatedAt: Date;
   }): Subscription {
@@ -109,6 +117,7 @@ export class Subscription extends Entity<number> {
       data.renewalDate,
       data.slackUserIds,
       data.projects,
+      data.notes || null,
       data.createdAt,
       data.updatedAt
     );
@@ -185,6 +194,11 @@ export class Subscription extends Entity<number> {
     this._updatedAt = new Date();
   }
 
+  updateNotes(notes: string | null): void {
+    this._notes = notes;
+    this._updatedAt = new Date();
+  }
+
   updateUsers(slackUserIds: string[]): void {
     if (slackUserIds.length === 0) {
       throw new Error('Subscription must have at least one user');
@@ -204,6 +218,7 @@ export class Subscription extends Entity<number> {
     renewalDate: Date;
     slackUserIds: string[];
     projects: string[];
+    notes: string | null;
     createdAt: Date;
     updatedAt: Date;
   } {
@@ -219,6 +234,7 @@ export class Subscription extends Entity<number> {
       renewalDate: this._renewalDate,
       slackUserIds: this._slackUserIds,
       projects: this._projects,
+      notes: this._notes,
       createdAt: this.createdAt,
       updatedAt: this._updatedAt,
     };
