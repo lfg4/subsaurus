@@ -1,12 +1,14 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight, Send } from 'lucide-react';
 import type { Subscription, User, PageType } from '@/app/types';
 import { subscriptionsApi, usersApi, usageChecksApi, type SlackUserDTO } from '@/app/lib/api';
 import { getCurrencySymbol } from '@/app/utils/currency';
 import { formatDate } from '@/app/utils/formatDate';
 import { UsageCheckStatus } from '@/src/types/enums';
+import { toast } from 'sonner';
 
 interface SubscriptionViewProps {
   subscriptionId: number;
@@ -23,11 +25,13 @@ export function SubscriptionView({
   setSelectedCheckId,
   currentUser 
 }: SubscriptionViewProps) {
+  const router = useRouter();
   const [subscription, setSubscription] = useState<Subscription | null>(null);
   const [assignedUsers, setAssignedUsers] = useState<SlackUserDTO[]>([]);
   const [usageChecks, setUsageChecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRequestingUsers, setIsRequestingUsers] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -38,7 +42,6 @@ export function SubscriptionView({
       .then(([subData, usersData, checksData]) => {
         setSubscription(subData);
         
-        // Filtrar los usuarios asignados
         const assigned = usersData.filter(user => 
           subData.slackUserIds?.includes(user.slackUserId)
         );
@@ -59,7 +62,7 @@ export function SubscriptionView({
     setIsDeleting(true);
     try {
       await subscriptionsApi.delete(subscriptionId);
-      setCurrentPage('subscriptions');
+      router.push('/subscriptions');
     } catch (error) {
       alert('Failed to delete subscription');
       setIsDeleting(false);
@@ -67,13 +70,23 @@ export function SubscriptionView({
   };
 
   const handleEdit = () => {
-    setSelectedSubscriptionId(subscriptionId);
-    setCurrentPage('subscription-edit');
+    router.push(`/subscriptions/${subscriptionId}/edit`);
   };
 
   const handleViewCheck = (checkId: number) => {
-    setSelectedCheckId(checkId);
-    setCurrentPage('check-detail');
+    router.push(`/checks/${checkId}`);
+  };
+
+  const handleRequestUsers = async () => {
+    setIsRequestingUsers(true);
+    try {
+      const result = await subscriptionsApi.requestUsers(subscriptionId);
+      toast.success(`✅ Message sent to ${result.sentCount} users!`);
+    } catch (error) {
+      toast.error('❌ Failed to send messages');
+    } finally {
+      setIsRequestingUsers(false);
+    }
   };
 
   if (isLoading) {
@@ -115,12 +128,11 @@ export function SubscriptionView({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <button
             type="button"
-            onClick={() => setCurrentPage('subscriptions')}
+            onClick={() => router.push('/subscriptions')}
             className="p-3 hover:bg-white/50 rounded-xl transition-all border-2 border-green-300 bg-white"
           >
             <ArrowLeft className="w-6 h-6 text-gray-700" />
@@ -152,10 +164,8 @@ export function SubscriptionView({
         </div>
       </div>
 
-      {/* Main Info Card - Full Width */}
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-4 border-green-400 p-8 shadow-xl mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Amount */}
           <div className="bg-white rounded-xl p-6 border-2 border-green-300 shadow-md">
             <div className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
@@ -167,7 +177,6 @@ export function SubscriptionView({
             <div className="text-sm text-gray-500 font-semibold mt-1">{subscription.costCurrency}</div>
           </div>
 
-          {/* Billing Cycle */}
           <div className="bg-white rounded-xl p-6 border-2 border-blue-300 shadow-md">
             <div className="text-sm font-bold text-gray-600 mb-2">BILLING CYCLE</div>
             <div className="text-3xl font-black text-gray-900">
@@ -175,7 +184,6 @@ export function SubscriptionView({
             </div>
           </div>
 
-          {/* Renewal Date */}
           <div className={`bg-white rounded-xl p-6 border-2 shadow-md ${
             daysUntil <= 7 ? 'border-red-300' : daysUntil <= 30 ? 'border-yellow-300' : 'border-green-300'
           }`}>
@@ -199,7 +207,6 @@ export function SubscriptionView({
         </div>
       </div>
 
-      {/* Projects Section - Full Width */}
       {subscription.projects && subscription.projects.length > 0 && (
         <div className="bg-white rounded-2xl border-4 border-purple-400 p-8 shadow-xl mb-6">
           <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-2">
@@ -219,7 +226,6 @@ export function SubscriptionView({
         </div>
       )}
 
-      {/* Assigned Users Section - Full Width */}
       <div className="bg-white rounded-2xl border-4 border-blue-400 p-8 shadow-xl mb-6">
         <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
           <Users className="w-6 h-6 text-blue-600" />
@@ -254,12 +260,32 @@ export function SubscriptionView({
         ) : (
           <div className="text-center py-8">
             <div className="text-6xl mb-3">👻</div>
-            <p className="text-gray-600 font-semibold">No users assigned yet</p>
+            <p className="text-gray-600 font-semibold mb-4">No users assigned yet</p>
+            <button
+              type="button"
+              onClick={handleRequestUsers}
+              disabled={isRequestingUsers}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isRequestingUsers ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending messages...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Ask all users if they use it
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 This will send a Slack message to all active users in the workspace
+            </p>
           </div>
         )}
       </div>
 
-      {/* Notes Section - Full Width */}
       {subscription.notes && (
         <div className="bg-white rounded-2xl border-4 border-yellow-400 p-8 shadow-xl mb-6">
           <h2 className="text-2xl font-black text-gray-900 mb-4">📝 Notes</h2>
@@ -271,7 +297,6 @@ export function SubscriptionView({
         </div>
       )}
 
-      {/* Usage Checks Section - Full Width */}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-8 shadow-xl">
         <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-2">
           <span className="text-2xl">📊</span>

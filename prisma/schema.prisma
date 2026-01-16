@@ -43,7 +43,7 @@ model Subscription {
   slackWorkspaceId    String   @map("slack_workspace_id")
   createdBySlackUser  String   @map("created_by_slack_user_id")
   name                String
-  projects String[] @default([]) @db.Text
+  projects            String[] @default([])
   renewalCycle        String   @map("renewal_cycle")
   renewalDate         DateTime @map("renewal_date")
   costAmount          Float    @map("cost_amount")

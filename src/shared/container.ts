@@ -63,18 +63,15 @@ class Container {
    * Resolve and get instance (singleton)
    */
   resolve<T>(key: string): T {
-    // Return existing instance if already created
     if (this.instances.has(key)) {
       return this.instances.get(key) as T;
     }
 
-    // Get factory
     const factory = this.factories.get(key);
     if (!factory) {
       throw new Error(`Service "${key}" not registered in container`);
     }
 
-    // Create and cache instance
     const instance = factory();
     this.instances.set(key, instance);
 
@@ -228,6 +225,8 @@ container.register(
       container.resolve('SlackClient'),
       container.resolve('SlackMessageBuilder'),
       container.resolve('CreateSubscriptionService'),
+      container.resolve('UpdateSubscriptionService'),
+      container.resolve('GetSubscriptionByIdService'),
       container.resolve('RecordUsageResponseService')
     )
 );

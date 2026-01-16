@@ -10,7 +10,11 @@
     "postinstall": "prisma generate",
     "trigger:dev": "npx trigger.dev@latest dev",
     "trigger:deploy": "npx trigger.dev@latest deploy",
-    "trigger:logs": "npx trigger.dev@latest logs"
+    "trigger:logs": "npx trigger.dev@latest logs",
+    "test": "jest",
+    "test:watch": "jest --watch",
+    "test:coverage": "jest --coverage",
+    "test:unit": "jest --testPathPattern=spec.ts"
   },
   "dependencies": {
     "@prisma/client": "^5.22.0",
@@ -29,13 +33,16 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
-    "@trigger.dev/build": "4.3.2",
+    "@trigger.dev/build": "^4.3.2",
+    "@types/jest": "^30.0.0",
     "@types/node": "^20",
     "@types/react": "^19.2.8",
     "@types/react-dom": "^19",
     "eslint": "^9",
     "eslint-config-next": "16.1.1",
+    "jest": "^30.2.0",
     "tailwindcss": "^4",
+    "ts-jest": "^29.4.6",
     "typescript": "^5"
   }
 }

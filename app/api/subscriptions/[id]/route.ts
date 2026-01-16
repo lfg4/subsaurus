@@ -58,7 +58,7 @@ export async function PATCH(
       renewalDate: body.renewalDate ? new Date(body.renewalDate) : undefined,
       price: body.costAmount ? parseFloat(body.costAmount) : undefined,
       currency: body.costCurrency,
-      projects: body.project ? [body.project] : undefined,
+      projects: body.projects || (body.project ? [body.project] : undefined),
       slackUserIds: body.slackUserIds,
       notes: body.notes,
     });

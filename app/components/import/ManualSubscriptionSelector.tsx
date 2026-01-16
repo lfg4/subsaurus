@@ -95,7 +95,6 @@ export function ManualSubscriptionSelector({
         </div>
       </div>
 
-      {/* Search */}
       <div className="relative">
         <input
           type="text"
@@ -106,7 +105,6 @@ export function ManualSubscriptionSelector({
         />
       </div>
 
-      {/* Stats */}
       {expenses.length > 0 && (
         <div className="flex items-center gap-4">
           <div className="px-4 py-2 bg-blue-50 border-2 border-blue-300 rounded-xl font-black text-blue-800">
@@ -121,7 +119,6 @@ export function ManualSubscriptionSelector({
         </div>
       )}
 
-      {/* Debug Info */}
       {transactions.length === 0 && (
         <div className="text-center py-12 bg-red-50 border-4 border-red-300 rounded-2xl">
           <div className="text-6xl mb-4">⚠️</div>
@@ -138,7 +135,6 @@ export function ManualSubscriptionSelector({
         </div>
       )}
 
-      {/* Grouped Transactions */}
       {expenses.length > 0 && (
         <div className="space-y-3 max-h-96 overflow-y-auto">
           {filteredGroups.map(([description, items]) => {
@@ -160,7 +156,6 @@ export function ManualSubscriptionSelector({
                 `}
               >
                 <div className="p-4">
-                  {/* Group Header */}
                   <div className="flex items-start gap-3 mb-3">
                     <input
                       type="checkbox"
@@ -178,7 +173,6 @@ export function ManualSubscriptionSelector({
                         </span>
                       </div>
 
-                      {/* Show first few transactions */}
                       <div className="space-y-2">
                         {items.slice(0, 3).map((item) => (
                           <div
@@ -219,7 +213,6 @@ export function ManualSubscriptionSelector({
         </div>
       )}
 
-      {/* Actions */}
       <div className="flex justify-between items-center pt-6 border-t-4 border-green-300">
         <button
           type="button"
