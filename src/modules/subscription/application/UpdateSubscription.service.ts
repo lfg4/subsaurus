@@ -11,6 +11,7 @@ export interface UpdateSubscriptionDTO {
   currency?: string;
   projects?: string[];
   slackUserIds?: string[];
+  notes?: string;
 }
 
 
@@ -43,6 +44,10 @@ export class UpdateSubscriptionService {
 
     if (data.projects !== undefined) {
       subscription.updateProjects(data.projects);
+    }
+
+    if (data.notes !== undefined) {
+      subscription.updateNotes(data.notes);
     }
 
     if (data.slackUserIds !== undefined) {

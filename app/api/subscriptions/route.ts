@@ -57,6 +57,7 @@ export async function POST(request: Request) {
       renewalDate: body.renewalDate,
       slackUserIds: body.slackUserIds || [],
       projects: body.project ? [body.project] : [],
+      notes: body.notes,
     });
 
     return NextResponse.json(

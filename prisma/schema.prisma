@@ -48,6 +48,7 @@ model Subscription {
   renewalDate         DateTime @map("renewal_date")
   costAmount          Float    @map("cost_amount")
   costCurrency        String   @map("cost_currency")
+  notes               String?
   createdAt           DateTime @default(now()) @map("created_at")
   updatedAt           DateTime @updatedAt @map("updated_at")
 

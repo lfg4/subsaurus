@@ -6,8 +6,7 @@ import { useState, useEffect } from 'react';
 import { usageChecksApi } from '@/app/lib/api';
 import { UsageCheckStatus, UsageResponseType } from '@/src/types/enums';
 import { toast } from 'sonner';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
+import type { PageType } from '@/app/types';
 
 interface CheckDetailProps {
   checkId: number;

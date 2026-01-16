@@ -10,3 +10,5 @@ export interface User {
   email: string;
   avatarUrl: string;
 }
+
+export type { PageType } from './navigation';

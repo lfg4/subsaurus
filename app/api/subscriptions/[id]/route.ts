@@ -60,6 +60,7 @@ export async function PATCH(
       currency: body.costCurrency,
       projects: body.project ? [body.project] : undefined,
       slackUserIds: body.slackUserIds,
+      notes: body.notes,
     });
 
     return NextResponse.json({ success: true, data: subscription.toPrimitives() });

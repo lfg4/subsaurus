@@ -16,6 +16,7 @@ export class SubscriptionRepository {
         renewalDate: primitives.renewalDate,
         costAmount: primitives.costAmount,
         costCurrency: primitives.costCurrency,
+        notes: primitives.notes,
         subscriptionUsers: {
           create: userIds.map(userId => ({
             slackWorkspaceId: primitives.slackWorkspaceId,
@@ -43,6 +44,7 @@ export class SubscriptionRepository {
         costAmount: primitives.costAmount,
         costCurrency: primitives.costCurrency,
         project: primitives.projects[0] || null,
+        notes: primitives.notes,
         updatedAt: primitives.updatedAt,
       },
     });
@@ -140,6 +142,7 @@ async updateUsersInDatabase(subscriptionId: number, slackWorkspaceId: string, sl
       renewalDate: data.renewalDate,
       slackUserIds: data.subscriptionUsers?.map((su: any) => su.slackUserId) || [],
       projects: data.project ? [data.project] : [],
+      notes: data.notes,
       createdAt: data.createdAt,
       updatedAt: data.updatedAt,
     });

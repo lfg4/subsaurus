@@ -2,16 +2,12 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
-import type { Subscription } from '@/app/types';
+import type { Subscription, User, PageType } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
 import { NewSubscription } from './NewSubscription';
 import { subscriptionsApi, usageChecksApi } from '@/app/lib/api';
 import { toast } from 'sonner';
-
-type PageType = 'subscriptions' | 'subscription-detail' | 'checks' | 'check-detail' | 'settings';
-
-import type { User } from '@/app/types';
 
 interface SubscriptionsListProps {
   searchTerm: string;
@@ -118,7 +114,7 @@ useEffect(() => {
 
   const handleViewDetail = (id: number) => {
     setSelectedSubscriptionId(id);
-    setCurrentPage('subscription-detail');
+    setCurrentPage('subscription-edit');
   };
 
   const handleDelete = (id: number) => {
@@ -273,7 +269,14 @@ useEffect(() => {
             </thead>
             <tbody className="divide-y-2 divide-green-200">
               {filteredSubscriptions.map(sub => (
-                <tr key={sub.id} className="hover:bg-green-50 transition-colors">
+                <tr 
+  key={sub.id} 
+  onClick={() => {
+    setSelectedSubscriptionId(sub.id);
+    setCurrentPage('subscription-view');
+  }}
+  className="hover:bg-green-50 transition-colors cursor-pointer"
+>
                   <td className="px-6 py-4">
                     <div className="font-bold text-gray-900">{sub.name}</div>
                   </td>
@@ -314,21 +317,27 @@ useEffect(() => {
                   <td className="px-6 py-4">
                     <div className="flex items-center justify-end gap-2">
                       <button 
-                        type="button"
-                        onClick={() => handleViewDetail(sub.id)}
-                        className="p-2 text-blue-400 hover:text-blue-600 transition transform hover:scale-125"
-                        title="Edit"
-                      >
-                        <Edit2 className="w-5 h-5" />
-                      </button>
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleViewDetail(sub.id);
+  }}
+  className="p-2 text-blue-400 hover:text-blue-600 transition transform hover:scale-125"
+  title="Edit"
+>
+  <Edit2 className="w-5 h-5" />
+</button>
                       <button 
-                        type="button"
-                        onClick={() => handleDelete(sub.id)}
-                        className="p-2 text-red-400 hover:text-red-600 transition transform hover:scale-125"
-                        title="Delete"
-                      >
-                        <Trash2 className="w-5 h-5" />
-                      </button>
+  type="button"
+  onClick={(e) => {
+    e.stopPropagation();
+    handleDelete(sub.id);
+  }}
+  className="p-2 text-red-400 hover:text-red-600 transition transform hover:scale-125"
+  title="Delete"
+>
+  <Trash2 className="w-5 h-5" />
+</button>
                     </div>
                   </td>
                 </tr>

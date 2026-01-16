@@ -12,6 +12,7 @@ export interface CreateSubscriptionDTO {
   renewalDate: string;
   slackUserIds?: string[];
   project?: string;
+  notes?: string;
 }
 
 export interface UpdateSubscriptionDTO {
@@ -22,6 +23,7 @@ export interface UpdateSubscriptionDTO {
   renewalDate?: string;
   project?: string;
   slackUserIds?: string[];
+  notes?: string;
 }
 
 export interface ApiResponse<T> {
