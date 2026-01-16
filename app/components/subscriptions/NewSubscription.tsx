@@ -81,7 +81,7 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
 
   const getAvailableUsers = () => {
     return slackUsers
-      .filter(u => !selectedUserIds.includes(u.slackUserId))
+      .filter(u => !selectedUserIds.includes(u.slackUserId) && u.isActive)
       .map(u => ({
         slackUserId: u.slackUserId,
         displayName: u.displayName,

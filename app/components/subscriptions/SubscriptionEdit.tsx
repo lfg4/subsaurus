@@ -124,7 +124,9 @@ const handleRemoveUser = async (userId: string) => {
 };
 
 const getAvailableUsers = () => {
-  return slackUsers.filter(u => !subscription?.slackUserIds?.includes(u.slackUserId));
+  return slackUsers.filter(u => 
+    !subscription?.slackUserIds?.includes(u.slackUserId) && u.isActive
+  );
 };
 
   if (isLoading) {
