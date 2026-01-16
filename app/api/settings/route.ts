@@ -18,7 +18,6 @@ export async function GET(request: Request) {
     const settingsRepository = container.resolve<SettingsRepository>('SettingsRepository');
     const settings = await settingsRepository.findByWorkspace(workspaceId);
 
-    console.log('🦖 Settings from DB:', settings);
 
 const settingsData = settings ? settings.toPrimitives() : { daysBeforeRenewal: 7, preferredCurrency: 'EUR' };
 return NextResponse.json(settingsData);  } catch (error) {

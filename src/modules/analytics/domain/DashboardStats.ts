@@ -12,7 +12,9 @@ export class DashboardStats {
     public readonly subscriptionHealth: SubscriptionHealth[],
     public readonly subscriptionsWithoutUsers: SubscriptionWithoutUsers[],
     public readonly upcomingRenewals: UpcomingRenewal[],
-    public readonly projectExpenses: ProjectExpense[]
+    public readonly projectExpenses: ProjectExpense[],
+    public readonly convertedTotal: number,
+    public readonly preferredCurrency: string
   ) {}
 
   static create(
@@ -20,14 +22,18 @@ export class DashboardStats {
     subscriptionHealth: SubscriptionHealth[],
     subscriptionsWithoutUsers: SubscriptionWithoutUsers[],
     upcomingRenewals: UpcomingRenewal[],
-    projectExpenses: ProjectExpense[]
+    projectExpenses: ProjectExpense[],
+    convertedTotal: number,
+    preferredCurrency: string
   ): DashboardStats {
     return new DashboardStats(
       currencyTotals,
       subscriptionHealth,
       subscriptionsWithoutUsers,
       upcomingRenewals,
-      projectExpenses
+      projectExpenses,
+      convertedTotal,
+      preferredCurrency
     );
   }
 
@@ -45,6 +51,8 @@ export class DashboardStats {
       daysUntil: r.daysUntil,
     })),
     projectExpenses: this.projectExpenses,
+    convertedTotal: this.convertedTotal,
+    preferredCurrency: this.preferredCurrency,
   };
 }
 }

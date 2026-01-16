@@ -106,12 +106,7 @@ export class AppSettings {
   }
 
   static fromPrimitives(primitives: AppSettingsPrimitives): AppSettings {
-  console.log('🔍 DEBUG AppSettings.fromPrimitives:', {
-    primitives,
-    preferredCurrency: primitives.preferredCurrency,
-    type: typeof primitives.preferredCurrency,
-    raw: JSON.stringify(primitives)
-  });
+  
   
   return new AppSettings(
     primitives.id,

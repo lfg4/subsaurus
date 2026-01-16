@@ -52,19 +52,10 @@ export function SettingsPage({ currentUser }: SettingsPageProps) {
   };
 }, [isCurrencyDropdownOpen]);
 
-console.log('🦖 Current state:', {
-  daysBeforeRenewal,
-  type: typeof daysBeforeRenewal,
-  preferredCurrency
-});
+
 
   const handleSave = async () => {
-  console.log('🦖 DEBUG handleSave:', {
-    hasCurrentUser: !!currentUser,
-    workspaceId: currentUser?.slackWorkspaceId,
-    daysBeforeRenewal,
-    preferredCurrency
-  });
+  
 
   if (!currentUser?.slackWorkspaceId) {
     toast.error('Workspace ID not found');
@@ -73,11 +64,7 @@ console.log('🦖 Current state:', {
 
   setIsSaving(true);
   try {
-    console.log('🦖 Calling settingsApi.update with:', {
-      workspaceId: currentUser.slackWorkspaceId,
-      daysBeforeRenewal,
-      preferredCurrency
-    });
+    
     
     await settingsApi.update(currentUser.slackWorkspaceId, daysBeforeRenewal, preferredCurrency);
     toast.success('Settings saved successfully');

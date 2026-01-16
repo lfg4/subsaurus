@@ -39,6 +39,8 @@ import { ValidateSessionService } from '@/src/modules/auth/application/ValidateS
 import { ProcessRenewalNotificationsService } from '@/src/modules/subscription/application/ProcessRenewalNotifications.service';
 
 import { GetDashboardStatsService } from '@/src/modules/analytics/application/GetDashboardStats.service';
+import { ConvertCurrencyTotalsService } from '@/src/modules/analytics/application/ConvertCurrencyTotalsService';
+import { ExchangeRateRepository } from '@/src/modules/analytics/infrastructure/ExchangeRateRepository';
 
 type Factory<T = unknown> = () => T;
 
@@ -95,6 +97,7 @@ container.register('UsageCheckRepository', () => new UsageCheckRepository());
 container.register('UsageResponseRepository', () => new UsageResponseRepository());
 container.register('SettingsRepository', () => new SettingsRepository());
 container.register('SessionRepository', () => new SessionRepository());
+container.register('ExchangeRateRepository', () => new ExchangeRateRepository());
 
 
 container.register('SlackClient', () => new SlackClient());
@@ -277,12 +280,19 @@ container.register(
 );
 
 container.register(
+  'ConvertCurrencyTotalsService',
+  () => new ConvertCurrencyTotalsService(container.resolve('ExchangeRateRepository'))
+);
+
+container.register(
   'GetDashboardStatsService',
   () =>
     new GetDashboardStatsService(
       container.resolve('SubscriptionRepository'),
       container.resolve('UsageCheckRepository'),
-      container.resolve('UsageResponseRepository')
+      container.resolve('UsageResponseRepository'),
+      container.resolve('SettingsRepository'),
+      container.resolve('ConvertCurrencyTotalsService')
     )
 );
 

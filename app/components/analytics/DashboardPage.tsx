@@ -4,8 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AlertTriangle, Calendar, BarChart3 } from 'lucide-react';
 import type { User, PageType } from '@/app/types';
 import { analyticsApi, type DashboardData } from '@/app/lib/api';
-import { settingsApi } from '@/app/lib/api';
-import { CurrencyConverter } from '@/src/shared/domain/CurrencyConverter';
+import { getCurrencySymbol } from '@/app/utils/currency';
 
 interface DashboardPageProps {
   currentUser: User;
@@ -20,45 +19,13 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
   const [selectedProjects, setSelectedProjects] = useState<Set<string>>(new Set());
   const [isProjectDropdownOpen, setIsProjectDropdownOpen] = useState(false);
   const dropdownRef = useRef<HTMLDivElement>(null);
-const [preferredCurrency, setPreferredCurrency] = useState<string>('EUR');
-const [convertedTotal, setConvertedTotal] = useState<number>(0);
-
-const convertTotalAmount = async (
-  currencyTotals: { currency: string; totalMonthly: number }[],
-  targetCurrency: string
-): Promise<number> => {
-  let total = 0;
-  
-  for (const currencyTotal of currencyTotals) {
-    try {
-      const converted = await CurrencyConverter.convert(
-        currencyTotal.totalMonthly,
-        currencyTotal.currency,
-        targetCurrency
-      );
-      total += converted;
-    } catch {
-      total += currencyTotal.totalMonthly;
-    }
-  }
-  
-  return total;
-};
 
 useEffect(() => {
   if (currentUser?.slackWorkspaceId) {
     setIsLoading(true);
-    Promise.all([
-      analyticsApi.getDashboard(currentUser.slackWorkspaceId),
-      settingsApi.get(currentUser.slackWorkspaceId)
-    ])
-      .then(async ([dashboardData, settings]) => {
+    analyticsApi.getDashboard(currentUser.slackWorkspaceId)
+      .then((dashboardData) => {
         setData(dashboardData);
-        setPreferredCurrency(settings.preferredCurrency || 'EUR');
-        
-        const total = await convertTotalAmount(dashboardData.currencyTotals, settings.preferredCurrency || 'EUR');
-        setConvertedTotal(total);
-        
         setIsLoading(false);
       })
       .catch(() => {
@@ -129,12 +96,12 @@ useEffect(() => {
   <div className="text-sm font-bold text-gray-600 mb-2">TOTAL MONTHLY SPENDING</div>
   <div className="flex items-baseline gap-2">
     <span className="text-5xl font-black text-gray-900">
-      {CurrencyConverter.getCurrencySymbol(preferredCurrency)}
-      {convertedTotal.toFixed(2)}
+      {getCurrencySymbol(data.preferredCurrency)}
+      {data.convertedTotal.toFixed(2)}
     </span>
-    <span className="text-xl font-bold text-gray-600">{preferredCurrency}</span>
+    <span className="text-xl font-bold text-gray-600">{data.preferredCurrency}</span>
   </div>
-  {data.currencyTotals.some(t => t.currency !== preferredCurrency) && (
+  {data.currencyTotals.some(t => t.currency !== data.preferredCurrency) && (
     <div className="text-xs text-gray-500 mt-2">
       ℹ️ Amounts converted to your preferred currency
     </div>
@@ -203,9 +170,9 @@ useEffect(() => {
               {sub.reason}
             </div>
           </div>
-          <div className="text-right">
+                <div className="text-right">
             <div className="font-black text-gray-900">
-{CurrencyConverter.getCurrencySymbol(sub.currency)}{sub.monthlyEquivalent.toFixed(2)}/mo            </div>
+{getCurrencySymbol(sub.currency)}{sub.monthlyEquivalent.toFixed(2)}/mo            </div>
           </div>
         </div>
       </button>
@@ -238,7 +205,7 @@ useEffect(() => {
             {Array.from(totalRenewalsAmount.entries()).map(([currency, amount]) => (
               <div key={currency} className="px-3 py-1 bg-blue-100 border-2 border-blue-300 rounded-lg">
                 <span className="text-sm font-bold text-blue-900">
-                 Total: {CurrencyConverter.getCurrencySymbol(currency)}{amount.toFixed(2)}
+                 Total: {getCurrencySymbol(currency)}{amount.toFixed(2)}
                 </span>
               </div>
             ))}
@@ -261,7 +228,7 @@ useEffect(() => {
                 </div>
                 <div className="text-right">
                   <div className="font-black text-gray-900">
-                    {CurrencyConverter.getCurrencySymbol(renewal.currency)}{renewal.amount.toFixed(2)}
+                    {getCurrencySymbol(renewal.currency)}{renewal.amount.toFixed(2)}
                   </div>
                   <div className="text-xs text-gray-500 font-semibold">
                     {new Date(renewal.renewalDate).toLocaleDateString('en-US', {
@@ -357,7 +324,7 @@ useEffect(() => {
                   <div className="flex justify-between items-center mb-1">
                     <span className="font-bold text-gray-900">{project.project}</span>
                     <span className="text-sm font-semibold text-gray-600">
-{CurrencyConverter.getCurrencySymbol(project.currency)}{project.monthlyAmount.toFixed(2)}/mo                    </span>
+{getCurrencySymbol(project.currency)}{project.monthlyAmount.toFixed(2)}/mo                    </span>
                   </div>
                   <div className="w-full bg-gray-200 rounded-full h-3 overflow-hidden border-2 border-gray-300">
                     <div
