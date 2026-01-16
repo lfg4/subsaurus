@@ -359,7 +359,7 @@ export class SlackMessageBuilder {
           type: 'section',
           text: {
             type: 'mrkdwn',
-            text: `${funnyIntro}\n\n*${subscriptionName}* is about to renew and honestly... :drum:`,
+            text: `${funnyIntro}\n\n*${subscriptionName}* is about to renew and honestly... :drum_with_drumsticks:`,
           },
         },
         {
@@ -441,7 +441,7 @@ export class SlackMessageBuilder {
         type: 'section',
         text: {
           type: 'mrkdwn',
-          text: ":t-rex: *Attention humans!* :loudspeaker:\n\nThese subscriptions are renewing TOMORROW and the dino has been collecting intel on whether you actually use them... :detective:\n\n_Spoiler alert: Some of you might be busted!_ :eyes:",
+          text: ":t-rex: *Attention humans!* :loudspeaker:\n\nThese subscriptions are renewing TOMORROW and the dino has been collecting intel on whether you actually use them... :female-detective:\n\n_Spoiler alert: Some of you might be busted!_ :eyes:",
         },
       },
       {
