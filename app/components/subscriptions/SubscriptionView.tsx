@@ -42,7 +42,6 @@ export function SubscriptionView({
       .then(([subData, usersData, checksData]) => {
         setSubscription(subData);
         
-        // Filtrar los usuarios asignados
         const assigned = usersData.filter(user => 
           subData.slackUserIds?.includes(user.slackUserId)
         );
@@ -129,7 +128,6 @@ export function SubscriptionView({
 
   return (
     <div className="max-w-7xl mx-auto">
-      {/* Header */}
       <div className="flex items-center justify-between mb-8">
         <div className="flex items-center gap-4">
           <button
@@ -166,10 +164,8 @@ export function SubscriptionView({
         </div>
       </div>
 
-      {/* Main Info Card - Full Width */}
       <div className="bg-gradient-to-br from-green-50 to-emerald-50 rounded-2xl border-4 border-green-400 p-8 shadow-xl mb-6">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Amount */}
           <div className="bg-white rounded-xl p-6 border-2 border-green-300 shadow-md">
             <div className="text-sm font-bold text-gray-600 mb-2 flex items-center gap-2">
               <DollarSign className="w-4 h-4" />
@@ -181,7 +177,6 @@ export function SubscriptionView({
             <div className="text-sm text-gray-500 font-semibold mt-1">{subscription.costCurrency}</div>
           </div>
 
-          {/* Billing Cycle */}
           <div className="bg-white rounded-xl p-6 border-2 border-blue-300 shadow-md">
             <div className="text-sm font-bold text-gray-600 mb-2">BILLING CYCLE</div>
             <div className="text-3xl font-black text-gray-900">
@@ -189,7 +184,6 @@ export function SubscriptionView({
             </div>
           </div>
 
-          {/* Renewal Date */}
           <div className={`bg-white rounded-xl p-6 border-2 shadow-md ${
             daysUntil <= 7 ? 'border-red-300' : daysUntil <= 30 ? 'border-yellow-300' : 'border-green-300'
           }`}>
@@ -213,7 +207,6 @@ export function SubscriptionView({
         </div>
       </div>
 
-      {/* Projects Section - Full Width */}
       {subscription.projects && subscription.projects.length > 0 && (
         <div className="bg-white rounded-2xl border-4 border-purple-400 p-8 shadow-xl mb-6">
           <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-2">
@@ -233,7 +226,6 @@ export function SubscriptionView({
         </div>
       )}
 
-      {/* Assigned Users Section - Full Width */}
       <div className="bg-white rounded-2xl border-4 border-blue-400 p-8 shadow-xl mb-6">
         <h2 className="text-2xl font-black text-gray-900 mb-6 flex items-center gap-2">
           <Users className="w-6 h-6 text-blue-600" />
@@ -294,7 +286,6 @@ export function SubscriptionView({
         )}
       </div>
 
-      {/* Notes Section - Full Width */}
       {subscription.notes && (
         <div className="bg-white rounded-2xl border-4 border-yellow-400 p-8 shadow-xl mb-6">
           <h2 className="text-2xl font-black text-gray-900 mb-4">📝 Notes</h2>
@@ -306,7 +297,6 @@ export function SubscriptionView({
         </div>
       )}
 
-      {/* Usage Checks Section - Full Width */}
       <div className="bg-white rounded-2xl border-4 border-green-400 p-8 shadow-xl">
         <h2 className="text-2xl font-black text-gray-900 mb-4 flex items-center gap-2">
           <span className="text-2xl">📊</span>

@@ -35,7 +35,6 @@ export function Sidebar({ currentPage: propsCurrentPage, setCurrentPage }: Sideb
     if (propsCurrentPage) {
       return propsCurrentPage === item.id;
     }
-    // Determine active based on pathname
     if (item.href === '/') return pathname === '/';
     return pathname.startsWith(item.href);
   };

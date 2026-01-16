@@ -372,7 +372,6 @@ useEffect(() => {
   <Edit2 className="w-5 h-5" />
 </button>
 
-                      {/* Request Users button - Only show if no users assigned */}
                       {(!sub.slackUserIds || sub.slackUserIds.length === 0) && (
                         <button 
                           type="button"

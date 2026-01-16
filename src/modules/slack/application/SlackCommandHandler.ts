@@ -153,7 +153,6 @@ export class SlackCommandHandler {
 
       const wasAssigned = response === 'YES';
 
-      // Get current subscription
       const subscription = await this.getSubscriptionByIdService.execute(subscriptionId);
       
       if (!subscription) {

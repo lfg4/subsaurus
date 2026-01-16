@@ -247,7 +247,6 @@ export function ImportWizard({
 
   return (
     <div className="max-w-5xl mx-auto">
-      {/* Progress Steps */}
       <div className="mb-10">
         <div className="flex items-center justify-between">
           {(['upload', 'mapping', 'preview'] as const).map((s, idx) => {
@@ -299,7 +298,6 @@ export function ImportWizard({
         </div>
       </div>
 
-      {/* Content */}
       <div className="bg-white rounded-2xl shadow-xl border-4 border-green-400 p-8">
         {isLoading && (
           <div className="text-center py-12">

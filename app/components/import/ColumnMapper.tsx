@@ -84,7 +84,6 @@ export function ColumnMapper({ columns, previewRows, onMappingComplete }: Column
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        {/* Fecha */}
         <div className="space-y-3">
           <label className="flex items-center gap-3 text-base font-black text-gray-900">
             <div className="p-2 bg-blue-100 rounded-lg border-2 border-blue-300">

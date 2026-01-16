@@ -28,23 +28,19 @@ export async function POST(
       return createNotFoundError('Subscription');
     }
 
-    // Get all active users from the workspace
     const getSlackUsersService = container.resolve<GetSlackUsersService>(
       'GetSlackUsersService'
     );
     const allUsers = await getSlackUsersService.execute(subscription.slackWorkspaceId);
 
-    // Get Slack client and message builder
     const slackClient = container.resolve<SlackClient>('SlackClient');
     const slackMessageBuilder = container.resolve<SlackMessageBuilder>('SlackMessageBuilder');
 
-    // Build the user assignment request message
     const message = slackMessageBuilder.buildUserAssignmentRequestMessage(
       subscription.id,
       subscription.name
     );
 
-    // Send message to all active users
     const sendPromises = allUsers.map(user => {
       if (user.isActive) {
         return slackClient.sendMessage(user.slackUserId, message);
