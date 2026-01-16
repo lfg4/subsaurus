@@ -72,10 +72,6 @@ export class Subscription extends Entity<number> {
       throw new Error('Subscription name cannot be empty');
     }
 
-    if (data.slackUserIds.length === 0) {
-      throw new Error('Subscription must have at least one user');
-    }
-
     return new Subscription(
       data.id || 0,
       data.slackWorkspaceId,
@@ -200,9 +196,6 @@ export class Subscription extends Entity<number> {
   }
 
   updateUsers(slackUserIds: string[]): void {
-    if (slackUserIds.length === 0) {
-      throw new Error('Subscription must have at least one user');
-    }
     this._slackUserIds = slackUserIds;
     this._updatedAt = new Date();
   }

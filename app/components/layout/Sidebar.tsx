@@ -1,21 +1,44 @@
 'use client';
 
 import { FileText, Check, Settings, Upload, BarChart3 } from 'lucide-react';
+import { useRouter, usePathname } from 'next/navigation';
 import type { PageType } from '@/app/types';
 
 interface SidebarProps {
-  currentPage: PageType;
-  setCurrentPage: (page: PageType) => void;
+  currentPage?: PageType;
+  setCurrentPage?: (page: PageType) => void;
 }
 
-export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
-  const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string }> = [
-    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, emoji: '📊' },
-    { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖' },
-    { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤' },
-    { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅' },
-    { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️' }
+export function Sidebar({ currentPage: propsCurrentPage, setCurrentPage }: SidebarProps) {
+  const router = useRouter();
+  const pathname = usePathname();
+
+  const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string; href: string }> = [
+    { id: 'dashboard', label: 'Dashboard', icon: BarChart3, emoji: '📊', href: '/' },
+    { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖', href: '/subscriptions' },
+    { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤', href: '/import' },
+    { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅', href: '/checks' },
+    { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️', href: '/settings' }
   ];
+
+  const handleNavigation = (item: typeof menuItems[0]) => {
+    if (setCurrentPage) {
+      // Old behavior (backward compatibility)
+      setCurrentPage(item.id);
+    } else {
+      // New behavior (Next.js routing)
+      router.push(item.href);
+    }
+  };
+
+  const isActive = (item: typeof menuItems[0]) => {
+    if (propsCurrentPage) {
+      return propsCurrentPage === item.id;
+    }
+    // Determine active based on pathname
+    if (item.href === '/') return pathname === '/';
+    return pathname.startsWith(item.href);
+  };
 
   return (
     <div className="fixed left-0 top-0 h-full w-64 bg-white border-r-4 border-green-400 p-6 shadow-xl">
@@ -26,14 +49,14 @@ export function Sidebar({ currentPage, setCurrentPage }: SidebarProps) {
 
       <nav className="space-y-2">
         {menuItems.map(item => {
-          const isActive = currentPage === item.id;
+          const active = isActive(item);
           return (
             <button
               key={item.id}
               type="button"
-              onClick={() => setCurrentPage(item.id)}
+              onClick={() => handleNavigation(item)}
               className={`w-full flex items-center gap-3 px-4 py-3 rounded-xl transition-all transform ${
-                isActive 
+                active 
                   ? 'bg-gradient-to-r from-green-400 to-emerald-400 text-white font-bold shadow-lg scale-105' 
                   : 'text-gray-700 hover:bg-green-50 hover:scale-102'
               }`}

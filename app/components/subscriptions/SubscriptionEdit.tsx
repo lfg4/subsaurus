@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { ChevronRight, Plus } from 'lucide-react';
+import { ChevronRight, Plus, X, Loader2 } from 'lucide-react';
 import type { Subscription, User, PageType } from '@/app/types';
 import { subscriptionsApi, usersApi, type UpdateSubscriptionDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
@@ -29,6 +29,7 @@ export function SubscriptionEdit({ subscriptionId, setCurrentPage, currentUser }
   const [isSaving, setIsSaving] = useState(false);
   const [slackUsers, setSlackUsers] = useState<any[]>([]);
   const [showAddUserModal, setShowAddUserModal] = useState(false);
+  const [removingUserId, setRemovingUserId] = useState<string | null>(null);
 
   useEffect(() => {
     Promise.all([
@@ -87,6 +88,27 @@ const handleAddUsers = async (newUserIds: string[]) => {
   const updatedSubscription = await subscriptionsApi.getById(subscriptionId);
   setSubscription(updatedSubscription);
   toast.success('Users added successfully');
+};
+
+const handleRemoveUser = async (userId: string) => {
+  const updatedUserIds = subscription?.slackUserIds?.filter(id => id !== userId) || [];
+
+  setRemovingUserId(userId);
+  try {
+    const updateData: UpdateSubscriptionDTO = {
+      slackUserIds: updatedUserIds
+    };
+
+    await subscriptionsApi.update(subscriptionId, updateData);
+
+    const updatedSubscription = await subscriptionsApi.getById(subscriptionId);
+    setSubscription(updatedSubscription);
+    toast.success('User removed successfully');
+  } catch {
+    toast.error('Error removing user');
+  } finally {
+    setRemovingUserId(null);
+  }
 };
 
 const getAvailableUsers = () => {
@@ -279,6 +301,19 @@ const getAvailableUsers = () => {
                       <div className="text-sm text-gray-600 font-semibold">{user.email}</div>
                     </div>
                   </div>
+                  <button
+                    type="button"
+                    onClick={() => handleRemoveUser(userId)}
+                    disabled={removingUserId === userId}
+                    className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed"
+                    title="Remove user"
+                  >
+                    {removingUserId === userId ? (
+                      <Loader2 className="w-5 h-5 animate-spin" />
+                    ) : (
+                      <X className="w-5 h-5" />
+                    )}
+                  </button>
                 </div>
               );
             })

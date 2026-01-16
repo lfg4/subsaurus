@@ -206,7 +206,6 @@ export function DashboardPage({ currentUser, setCurrentPage, setSelectedSubscrip
       type="button"
       onClick={() => {
         setSelectedSubscriptionId(renewal.id);
-        setCurrentPage('subscription-view');
       }}
       className="w-full flex justify-between items-center p-4 bg-blue-50 rounded-lg border-2 border-blue-200 hover:bg-blue-100 hover:border-blue-300 transition-all cursor-pointer"
     >

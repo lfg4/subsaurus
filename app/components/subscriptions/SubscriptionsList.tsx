@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react';
 import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
+import { useRouter } from 'next/navigation';
 import type { Subscription, User, PageType } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
 import { Modal } from '@/app/components/shared/Modal';
@@ -12,8 +13,8 @@ import { toast } from 'sonner';
 interface SubscriptionsListProps {
   searchTerm: string;
   setSearchTerm: (term: string) => void;
-  setCurrentPage: (page: PageType) => void;
-  setSelectedSubscriptionId: (id: number) => void;
+  setCurrentPage?: (page: PageType) => void;
+  setSelectedSubscriptionId?: (id: number) => void;
   workspaceId: string;
   currentUser: User;
 }
@@ -26,6 +27,7 @@ export function SubscriptionsList({
   workspaceId,
   currentUser
 }: SubscriptionsListProps) {
+  const router = useRouter();
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleteId, setDeleteId] = useState<number | null>(null);
   const [sortField, setSortField] = useState<'name' | 'renewalDate' | 'costAmount' | 'project'>('renewalDate');
@@ -75,7 +77,11 @@ useEffect(() => {
     currentUser={currentUser}
     setCurrentPage={() => { 
       setShowNewSubscription(false); 
-      setCurrentPage('subscriptions');
+      if (setCurrentPage) {
+        setCurrentPage('subscriptions');
+      } else {
+        router.push('/subscriptions');
+      }
       subscriptionsApi.getAll(workspaceId)
         .then(data => setSubscriptions(data))
         .catch(() => {});
@@ -113,8 +119,14 @@ useEffect(() => {
     });
 
   const handleViewDetail = (id: number) => {
-    setSelectedSubscriptionId(id);
-    setCurrentPage('subscription-edit');
+    if (setSelectedSubscriptionId && setCurrentPage) {
+      // Old navigation (backward compatibility)
+      setSelectedSubscriptionId(id);
+      setCurrentPage('subscription-edit');
+    } else {
+      // New navigation (Next.js routing)
+      router.push(`/subscriptions/${id}/edit`);
+    }
   };
 
   const handleDelete = (id: number) => {
@@ -272,8 +284,12 @@ useEffect(() => {
                 <tr 
   key={sub.id} 
   onClick={() => {
-    setSelectedSubscriptionId(sub.id);
-    setCurrentPage('subscription-view');
+    if (setSelectedSubscriptionId && setCurrentPage) {
+      setSelectedSubscriptionId(sub.id);
+      setCurrentPage('subscription-view');
+    } else {
+      router.push(`/subscriptions/${sub.id}`);
+    }
   }}
   className="hover:bg-green-50 transition-colors cursor-pointer"
 >
