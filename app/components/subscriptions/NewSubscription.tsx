@@ -1,12 +1,13 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { ChevronRight, Plus } from 'lucide-react';
 import { subscriptionsApi, usersApi, type SlackUserDTO } from '@/app/lib/api';
 import { RenewalCycle } from '@/src/types/enums';
 import { AddUsersModal } from '@/app/components/subscriptions/AddUsersModal';
 import { toast } from 'sonner';
 import type { User, PageType } from '@/app/types';
+import { CurrencySelect } from '@/app/components/shared/CurrencySelect';
 
 interface NewSubscriptionProps {
   setCurrentPage: (page: PageType) => void;
@@ -160,16 +161,11 @@ export function NewSubscription({ setCurrentPage, currentUser }: NewSubscription
             />
           </div>
           <div>
-            <label htmlFor="costCurrency" className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
-            <select 
-              value={formData.costCurrency}
-              onChange={(e) => setFormData({...formData, costCurrency: e.target.value})}
-              className="w-full px-4 py-3 border-2 border-green-300 rounded-xl focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white"
-            >
-              <option value="EUR">€ EUR</option>
-              <option value="USD">$ USD</option>
-              <option value="GBP">£ GBP</option>
-            </select>
+           <label htmlFor="costCurrency" className="block text-sm font-bold text-gray-700 mb-2">Currency</label>
+<CurrencySelect
+  value={formData.costCurrency}
+  onChange={(currency) => setFormData({...formData, costCurrency: currency})}
+/>
           </div>
         </div>
 

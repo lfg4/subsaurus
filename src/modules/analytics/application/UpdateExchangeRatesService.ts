@@ -28,13 +28,18 @@ export class UpdateExchangeRatesService {
   }
 
   private async getActiveCurrencies(): Promise<string[]> {
-    const result = await prisma.subscription.findMany({
-      select: { currency: true },
-      distinct: ['currency'],
-    });
-    
-    return result.map(r => r.currency);
-  }
+  const subscriptions = await prisma.subscription.findMany({
+    select: { costCurrency: true },
+  });
+  
+  const uniqueCurrencies = [...new Set(
+    subscriptions
+      .map(s => s.costCurrency)
+      .filter((currency): currency is string => currency !== null && currency !== undefined)
+  )];
+  
+  return uniqueCurrencies;
+}
 
   private async fetchRates(baseCurrency: string): Promise<Record<string, number>> {
     const url = `https://v6.exchangerate-api.com/v6/${this.apiKey}/latest/${baseCurrency}`;

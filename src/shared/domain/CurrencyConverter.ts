@@ -1,4 +1,5 @@
 import { ExchangeRateRepository } from '@/src/modules/analytics/infrastructure/ExchangeRateRepository';
+import getSymbolFromCurrency from 'currency-symbol-map';
 
 export class CurrencyConverter {
   private static repository = new ExchangeRateRepository();
@@ -25,11 +26,6 @@ export class CurrencyConverter {
   }
 
   static getCurrencySymbol(currency: string): string {
-    const symbols: Record<string, string> = {
-      EUR: '€',
-      USD: '$',
-      GBP: '£',
-    };
-    return symbols[currency] || currency;
-  }
+  return getSymbolFromCurrency(currency) || currency;
+}
 }

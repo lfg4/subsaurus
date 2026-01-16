@@ -1,4 +1,5 @@
 import { SETTINGS_CONSTANTS } from './constants/SettingsConstants';
+import currencyCodes from 'currency-codes';
 
 export interface AppSettingsPrimitives {
   id: number;
@@ -24,11 +25,11 @@ export class AppSettings {
   }
 
   private validateCurrency(currency: string): void {
-    const validCurrencies = ['EUR', 'USD', 'GBP'];
-    if (!validCurrencies.includes(currency)) {
-    throw new Error(`Currency must be one of: ${validCurrencies.join(', ')}`);
-    }
+  const validCodes = currencyCodes.data.map(c => c.code);
+  if (!validCodes.includes(currency)) {
+    throw new Error(`Invalid currency code: ${currency}`);
   }
+}
 
   private validateWorkspaceId(workspaceId: string): void {
     if (!workspaceId || workspaceId.trim().length === 0) {
@@ -105,15 +106,22 @@ export class AppSettings {
   }
 
   static fromPrimitives(primitives: AppSettingsPrimitives): AppSettings {
-    return new AppSettings(
-      primitives.id,
-      primitives.slackWorkspaceId,
-      primitives.daysBeforeRenewal,
-      primitives.preferredCurrency,
-      primitives.isActive,
-      primitives.updatedAt,
-    );
-  }
+  console.log('🔍 DEBUG AppSettings.fromPrimitives:', {
+    primitives,
+    preferredCurrency: primitives.preferredCurrency,
+    type: typeof primitives.preferredCurrency,
+    raw: JSON.stringify(primitives)
+  });
+  
+  return new AppSettings(
+    primitives.id,
+    primitives.slackWorkspaceId,
+    primitives.daysBeforeRenewal,
+    primitives.preferredCurrency,
+    primitives.isActive,
+    primitives.updatedAt,
+  );
+}
 
   toPrimitives(): AppSettingsPrimitives {
     return {

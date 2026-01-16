@@ -1,8 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+// LÍNEA 1
+import { useState, useEffect } from 'react';
 import { Calendar, DollarSign, FileText, Coins } from 'lucide-react';
 import { toast } from 'sonner';
+import { getCurrencySymbol } from '@/app/utils/currency';
+import { settingsApi } from '@/app/lib/api';
 
 interface Column {
   name: string;
@@ -13,6 +16,7 @@ interface Column {
 interface ColumnMapperProps {
   columns: Column[];
   previewRows: Array<Record<string, string | number>>;
+  workspaceId: string;
   onMappingComplete: (mapping: {
     dateColumn: string;
     descriptionColumn: string;
@@ -21,11 +25,23 @@ interface ColumnMapperProps {
   }, manualMode?: boolean) => void;
 }
 
-export function ColumnMapper({ columns, previewRows, onMappingComplete }: ColumnMapperProps) {
-  const [dateColumn, setDateColumn] = useState<string>('');
+export function ColumnMapper({ columns, previewRows, workspaceId, onMappingComplete }: ColumnMapperProps) {  const [dateColumn, setDateColumn] = useState<string>('');
   const [descriptionColumn, setDescriptionColumn] = useState<string>('');
   const [amountColumn, setAmountColumn] = useState<string>('');
   const [currencyColumn, setCurrencyColumn] = useState<string>('');
+  const [preferredCurrency, setPreferredCurrency] = useState<string>('EUR');
+
+  useEffect(() => {
+  if (workspaceId) {
+    settingsApi.get(workspaceId)
+      .then(settings => {
+        setPreferredCurrency(settings.preferredCurrency || 'EUR');
+      })
+      .catch(() => {
+        setPreferredCurrency('EUR');
+      });
+  }
+}, [workspaceId]);
 
   useState(() => {
     const dateCol = columns.find(c => c.type === 'date');
@@ -171,17 +187,19 @@ export function ColumnMapper({ columns, previewRows, onMappingComplete }: Column
             <span>Currency <span className="text-gray-400 text-sm">(optional)</span></span>
           </label>
           <select
-            value={currencyColumn}
-            onChange={(e) => setCurrencyColumn(e.target.value)}
-            className="w-full px-5 py-4 border-4 border-green-300 rounded-xl focus:ring-4 focus:ring-green-400 focus:border-green-500 font-bold bg-white text-gray-900 text-base shadow-md hover:border-green-400 transition-all cursor-pointer"
-          >
-            <option value="">💶 EUR by default</option>
-            {columns.map((col) => (
-              <option key={col.name} value={col.name}>
-                {col.name}
-              </option>
-            ))}
-          </select>
+  value={currencyColumn}
+  onChange={(e) => setCurrencyColumn(e.target.value)}
+  className="w-full px-5 py-4 border-4 border-green-300 rounded-xl focus:ring-4 focus:ring-green-400 focus:border-green-500 font-bold bg-white text-gray-900 text-base shadow-md hover:border-green-400 transition-all cursor-pointer"
+>
+  <option value="">
+  {getCurrencySymbol(preferredCurrency)} {preferredCurrency} by default
+</option>
+  {columns.map((col) => (
+    <option key={col.name} value={col.name}>
+      {col.name}
+    </option>
+  ))}
+</select>
           {currencyColumn && (
             <div className="text-sm text-gray-600 font-semibold bg-gray-50 px-3 py-2 rounded-lg border-2 border-gray-200">
               <span className="text-gray-500">Example:</span> {columns.find(c => c.name === currencyColumn)?.sampleValues[0]}

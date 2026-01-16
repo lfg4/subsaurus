@@ -4,6 +4,7 @@ import { useState } from 'react';
 import {  TrendingUp, Calendar, DollarSign } from 'lucide-react';
 import type { SubscriptionPreview } from '@/app/lib/api';
 import { toast } from 'sonner';
+import { getCurrencySymbol } from '@/app/utils/currency';
 
 interface ImportPreviewProps {
   subscriptions: SubscriptionPreview[];
@@ -175,8 +176,8 @@ export function ImportPreview({
                                 >
                                   <span className="text-gray-600">{tx.date}</span>
                                   <span className="font-medium text-gray-900">
-                                    {tx.amount.toFixed(2)} EUR
-                                  </span>
+  {getCurrencySymbol(tx.currency || 'EUR')}{tx.amount.toFixed(2)} {tx.currency || 'EUR'}
+</span>
                                 </div>
                               ))}
                             </div>

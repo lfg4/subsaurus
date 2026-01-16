@@ -100,7 +100,7 @@ model AppSettings {
   id                    Int      @id @default(autoincrement())
   slackWorkspaceId      String   @unique @map("slack_workspace_id")
   daysBeforeRenewal     Int      @default(7) @map("days_before_renewal")
-  preferredCurrency     String   @default("EUR") @map("preferred_currency")
+  preferredCurrency String @default("EUR") @map("preferred_currency")
   isActive              Boolean  @default(true) @map("is_active")
   updatedAt             DateTime @updatedAt @map("updated_at")
 
