@@ -5,12 +5,16 @@ import { RenewalCycle } from '@/src/types/enums';
 import type { SubscriptionRepository } from '@/src/modules/subscription/infrastructure/SubscriptionRepository';
 import type { UsageCheckRepository } from '@/src/modules/usage-tracking/infrastructure/UsageCheckRepository';
 import type { UsageResponseRepository } from '@/src/modules/usage-tracking/infrastructure/UsageResponseRepository';
+import type { SettingsRepository } from '@/src/shared/infrastructure/SettingsRepository';
+import type { ConvertCurrencyTotalsService } from '../application/ConvertCurrencyTotalsService';
 
 describe('GetDashboardStatsService', () => {
   let service: GetDashboardStatsService;
   let subscriptionRepository: jest.Mocked<SubscriptionRepository>;
   let usageCheckRepository: jest.Mocked<UsageCheckRepository>;
   let usageResponseRepository: jest.Mocked<UsageResponseRepository>;
+  let settingsRepository: jest.Mocked<SettingsRepository>;
+  let convertCurrencyTotalsService: jest.Mocked<ConvertCurrencyTotalsService>;
 
   beforeEach(() => {
     subscriptionRepository = {
@@ -42,10 +46,27 @@ describe('GetDashboardStatsService', () => {
       update: jest.fn(),
     } as any;
 
+    settingsRepository = {
+      findByWorkspace: jest.fn(),
+      upsert: jest.fn(),
+      getDaysBeforeRenewal: jest.fn(),
+      getPreferredCurrency: jest.fn().mockResolvedValue('EUR'),
+      getAllWorkspaceIds: jest.fn(),
+    } as any;
+
+    convertCurrencyTotalsService = {
+      execute: jest.fn().mockResolvedValue({
+        convertedTotal: 100.0,
+        targetCurrency: 'EUR',
+      }),
+    } as any;
+
     service = new GetDashboardStatsService(
       subscriptionRepository,
       usageCheckRepository,
-      usageResponseRepository
+      usageResponseRepository,
+      settingsRepository,
+      convertCurrencyTotalsService
     );
   });
 
@@ -82,6 +103,14 @@ describe('GetDashboardStatsService', () => {
       expect(result.currencyTotals[0].totalMonthly).toBe(25.98);
       expect(result.currencyTotals[0].currency).toBe('EUR');
       expect(result.currencyTotals[0].subscriptionCount).toBe(2);
+      expect(result.convertedTotal).toBe(100.0);
+      expect(result.preferredCurrency).toBe('EUR');
+      expect(convertCurrencyTotalsService.execute).toHaveBeenCalledWith({
+        currencyTotals: expect.arrayContaining([
+          expect.objectContaining({ currency: 'EUR', totalMonthly: 25.98 })
+        ]),
+        targetCurrency: 'EUR',
+      });
     });
 
     it('should calculate upcoming renewals correctly', async () => {
@@ -198,6 +227,38 @@ describe('GetDashboardStatsService', () => {
       expect(marketingProject?.monthlyAmount).toBe(30);
       expect(marketingProject?.currency).toBe('EUR');
       expect(marketingProject?.subscriptionCount).toBe(2);
+    });
+
+    it('should retrieve preferred currency from settings', async () => {
+      settingsRepository.getPreferredCurrency.mockResolvedValue('USD');
+      
+      const mockSubscriptions = [
+        Subscription.create({
+          id: 1,
+          slackWorkspaceId: 'WS123',
+          createdBySlackUserId: 'U123',
+          name: 'Test',
+          cost: new Money(10, 'EUR'),
+          renewalCycle: RenewalCycle.MONTHLY,
+          renewalDate: new Date('2026-02-01'),
+          slackUserIds: ['U123'],
+        }),
+      ];
+
+      subscriptionRepository.findAll.mockResolvedValue(mockSubscriptions);
+      convertCurrencyTotalsService.execute.mockResolvedValue({
+        convertedTotal: 9.2,
+        targetCurrency: 'USD',
+      });
+
+      const result = await service.execute('WS123');
+
+      expect(settingsRepository.getPreferredCurrency).toHaveBeenCalledWith('WS123');
+      expect(convertCurrencyTotalsService.execute).toHaveBeenCalledWith(
+        expect.objectContaining({ targetCurrency: 'USD' })
+      );
+      expect(result.preferredCurrency).toBe('USD');
+      expect(result.convertedTotal).toBe(9.2);
     });
 
     it('should handle subscriptions with no projects', async () => {
