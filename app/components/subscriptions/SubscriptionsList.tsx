@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Search, Plus, Edit2, Trash2 } from 'lucide-react';
+import { Search, Plus, Edit2, Trash2, Send } from 'lucide-react';
 import { useRouter } from 'next/navigation';
 import type { Subscription, User, PageType } from '@/app/types';
 import { formatDate } from '@/app/utils/formatDate';
@@ -39,6 +39,7 @@ export function SubscriptionsList({
   const [isLoading, setIsLoading] = useState(true);
   const [showNewSubscription, setShowNewSubscription] = useState(false);
   const [usageChecks, setUsageChecks] = useState<any[]>([]);
+  const [requestingUsersForId, setRequestingUsersForId] = useState<number | null>(null);
 
 useEffect(() => {
   Promise.all([
@@ -146,6 +147,18 @@ useEffect(() => {
       setDeleteId(null);
     } catch {
       toast.error('Error deleting subscription');
+    }
+  };
+
+  const handleRequestUsers = async (id: number) => {
+    setRequestingUsersForId(id);
+    try {
+      const result = await subscriptionsApi.requestUsers(id);
+      toast.success(`✅ Message sent to ${result.sentCount} users!`);
+    } catch (error) {
+      toast.error('❌ Failed to send messages');
+    } finally {
+      setRequestingUsersForId(null);
     }
   };
 
@@ -358,6 +371,31 @@ useEffect(() => {
 >
   <Edit2 className="w-5 h-5" />
 </button>
+
+                      {/* Request Users button - Only show if no users assigned */}
+                      {(!sub.slackUserIds || sub.slackUserIds.length === 0) && (
+                        <button 
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleRequestUsers(sub.id);
+                          }}
+                          disabled={requestingUsersForId === sub.id}
+                          className="p-2 text-purple-400 hover:text-purple-600 transition transform hover:scale-125 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none relative group"
+                          title="Ask all users if they use this subscription"
+                        >
+                          {requestingUsersForId === sub.id ? (
+                            <div className="w-5 h-5 border-2 border-purple-400 border-t-transparent rounded-full animate-spin" />
+                          ) : (
+                            <Send className="w-5 h-5" />
+                          )}
+                          <span className="absolute bottom-full right-0 mb-2 hidden group-hover:block bg-gray-900 text-white text-xs rounded-lg py-2 px-3 whitespace-nowrap z-10">
+                            Ask users if they use it
+                            <span className="absolute top-full right-4 -mt-1 border-4 border-transparent border-t-gray-900"></span>
+                          </span>
+                        </button>
+                      )}
+
                       <button 
   type="button"
   onClick={(e) => {

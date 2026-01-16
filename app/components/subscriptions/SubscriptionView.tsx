@@ -1,12 +1,13 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight } from 'lucide-react';
+import { Pencil, Trash2, Calendar, DollarSign, Users, ArrowLeft, Folder, ChevronRight, Send } from 'lucide-react';
 import type { Subscription, User, PageType } from '@/app/types';
 import { subscriptionsApi, usersApi, usageChecksApi, type SlackUserDTO } from '@/app/lib/api';
 import { getCurrencySymbol } from '@/app/utils/currency';
 import { formatDate } from '@/app/utils/formatDate';
 import { UsageCheckStatus } from '@/src/types/enums';
+import { toast } from 'sonner';
 
 interface SubscriptionViewProps {
   subscriptionId: number;
@@ -28,6 +29,7 @@ export function SubscriptionView({
   const [usageChecks, setUsageChecks] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
+  const [isRequestingUsers, setIsRequestingUsers] = useState(false);
 
   useEffect(() => {
     Promise.all([
@@ -74,6 +76,18 @@ export function SubscriptionView({
   const handleViewCheck = (checkId: number) => {
     setSelectedCheckId(checkId);
     setCurrentPage('check-detail');
+  };
+
+  const handleRequestUsers = async () => {
+    setIsRequestingUsers(true);
+    try {
+      const result = await subscriptionsApi.requestUsers(subscriptionId);
+      toast.success(`✅ Message sent to ${result.sentCount} users!`);
+    } catch (error) {
+      toast.error('❌ Failed to send messages');
+    } finally {
+      setIsRequestingUsers(false);
+    }
   };
 
   if (isLoading) {
@@ -254,7 +268,28 @@ export function SubscriptionView({
         ) : (
           <div className="text-center py-8">
             <div className="text-6xl mb-3">👻</div>
-            <p className="text-gray-600 font-semibold">No users assigned yet</p>
+            <p className="text-gray-600 font-semibold mb-4">No users assigned yet</p>
+            <button
+              type="button"
+              onClick={handleRequestUsers}
+              disabled={isRequestingUsers}
+              className="inline-flex items-center gap-2 bg-gradient-to-r from-blue-500 to-cyan-500 text-white px-6 py-3 rounded-xl font-bold hover:from-blue-600 hover:to-cyan-600 transition-all transform hover:scale-105 shadow-lg disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none"
+            >
+              {isRequestingUsers ? (
+                <>
+                  <div className="w-5 h-5 border-2 border-white border-t-transparent rounded-full animate-spin" />
+                  Sending messages...
+                </>
+              ) : (
+                <>
+                  <Send className="w-5 h-5" />
+                  Ask all users if they use it
+                </>
+              )}
+            </button>
+            <p className="text-xs text-gray-500 mt-2">
+              💡 This will send a Slack message to all active users in the workspace
+            </p>
           </div>
         )}
       </div>

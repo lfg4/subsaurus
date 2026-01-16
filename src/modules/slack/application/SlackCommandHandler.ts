@@ -2,6 +2,8 @@ import { NextResponse } from 'next/server';
 import type { SlackClient } from '../infrastructure/SlackClient';
 import type { SlackMessageBuilder } from '../infrastructure/SlackMessageBuilder';
 import type { CreateSubscriptionService } from '@/src/modules/subscription/application/CreateSubscription.service';
+import type { UpdateSubscriptionService } from '@/src/modules/subscription/application/UpdateSubscription.service';
+import type { GetSubscriptionByIdService } from '@/src/modules/subscription/application/GetSubscriptionById.service';
 import type { RecordUsageResponseService } from '@/src/modules/usage-tracking/application/RecordUsageResponse.service';
 import { UsageResponseType, RenewalCycle } from '@/src/types/enums';
 import type { SlackSubscriptionData } from '@/src/types/slack';
@@ -18,6 +20,8 @@ export class SlackCommandHandler {
     private readonly slackClient: SlackClient,
     private readonly slackMessageBuilder: SlackMessageBuilder,
     private readonly createSubscriptionService: CreateSubscriptionService,
+    private readonly updateSubscriptionService: UpdateSubscriptionService,
+    private readonly getSubscriptionByIdService: GetSubscriptionByIdService,
     private readonly recordUsageResponseService: RecordUsageResponseService
   ) {}
 
@@ -85,6 +89,10 @@ export class SlackCommandHandler {
         return this.handleUsageResponse(value, userId);
       }
 
+      if (actionId?.startsWith('user_assignment_')) {
+        return this.handleUserAssignment(value, userId);
+      }
+
       return NextResponse.json({ ok: true });
     } catch (error) {
       logger.error('Error handling block actions', {
@@ -121,6 +129,63 @@ export class SlackCommandHandler {
       return NextResponse.json({ response_action: 'clear' });
     } catch (error) {
       logger.error('Error handling usage response', {
+        userId,
+        error: error instanceof Error ? error.message : String(error),
+      });
+      return NextResponse.json({
+        replace_original: true,
+        text: '❌ There was an error processing your response.',
+      });
+    }
+  }
+
+  private async handleUserAssignment(
+    value: string,
+    userId: string
+  ): Promise<NextResponse> {
+    try {
+      const [subscriptionIdStr, response] = value.split('|');
+      const subscriptionId = parseInt(subscriptionIdStr, 10);
+
+      if (!subscriptionId || !response) {
+        throw new Error('Invalid button value format');
+      }
+
+      const wasAssigned = response === 'YES';
+
+      // Get current subscription
+      const subscription = await this.getSubscriptionByIdService.execute(subscriptionId);
+      
+      if (!subscription) {
+        throw new Error(`Subscription with ID ${subscriptionId} not found`);
+      }
+
+      if (wasAssigned) {
+        // Add user to subscription (merge with existing users)
+        const currentUserIds = subscription.slackUserIds || [];
+        if (!currentUserIds.includes(userId)) {
+          await this.updateSubscriptionService.execute(subscriptionId, {
+            slackUserIds: [...currentUserIds, userId],
+          });
+        }
+
+        const confirmationMessage = this.slackMessageBuilder.buildUserAssignmentConfirmation(
+          subscription.name,
+          true
+        );
+        await this.slackClient.sendMessage(userId, confirmationMessage);
+      } else {
+        // Just send confirmation that they won't be assigned
+        const confirmationMessage = this.slackMessageBuilder.buildUserAssignmentConfirmation(
+          subscription.name,
+          false
+        );
+        await this.slackClient.sendMessage(userId, confirmationMessage);
+      }
+
+      return NextResponse.json({ response_action: 'clear' });
+    } catch (error) {
+      logger.error('Error handling user assignment', {
         userId,
         error: error instanceof Error ? error.message : String(error),
       });

@@ -60,6 +60,13 @@ class SubscriptionsApi {
   async delete(id: number): Promise<ApiResponse<void>> {
     return apiClient.delete<ApiResponse<void>>(`/subscriptions/${id}`);
   }
+
+  async requestUsers(id: number): Promise<{ success: boolean; sentCount: number; message: string }> {
+    return apiClient.post<{ success: boolean; sentCount: number; message: string }>(
+      `/subscriptions/${id}/request-users`,
+      {}
+    );
+  }
 }
 
 export const subscriptionsApi = new SubscriptionsApi();
