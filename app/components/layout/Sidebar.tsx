@@ -16,8 +16,8 @@ export function Sidebar({ currentPage: propsCurrentPage, setCurrentPage }: Sideb
   const menuItems: Array<{ id: PageType; label: string; icon: typeof FileText; emoji: string; href: string }> = [
     { id: 'dashboard', label: 'Dashboard', icon: BarChart3, emoji: '📊', href: '/' },
     { id: 'subscriptions', label: 'Subscriptions', icon: FileText, emoji: '🍖', href: '/subscriptions' },
-    { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤', href: '/import' },
     { id: 'checks', label: 'Usage Checks', icon: Check, emoji: '✅', href: '/checks' },
+    { id: 'import', label: 'Import Expenses', icon: Upload, emoji: '📤', href: '/import' },
     { id: 'settings', label: 'Settings', icon: Settings, emoji: '⚙️', href: '/settings' }
   ];
 

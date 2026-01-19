@@ -104,7 +104,8 @@ useEffect(() => {
       let matchesUrgency = true;
       if (filterUrgency !== 'all') {
         const daysUntil = Math.ceil((new Date(s.renewalDate).getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
-        if (filterUrgency === 'urgent') matchesUrgency = daysUntil <= 7;
+        if (filterUrgency === 'overdue') matchesUrgency = daysUntil < 0;
+        if (filterUrgency === 'urgent') matchesUrgency = daysUntil >= 0 && daysUntil <= 7;
         if (filterUrgency === 'soon') matchesUrgency = daysUntil > 7 && daysUntil <= 30;
         if (filterUrgency === 'later') matchesUrgency = daysUntil > 30;
       }
@@ -243,6 +244,7 @@ useEffect(() => {
             className="px-3 py-2 border-2 border-green-200 rounded-lg focus:ring-2 focus:ring-green-400 focus:border-green-400 font-semibold bg-white text-sm"
           >
             <option value="all">⏰ All urgencies</option>
+            <option value="overdue">🚨 Overdue (expired)</option>
             <option value="urgent">🔥 Urgent (≤7 days)</option>
             <option value="soon">⚠️ Soon (8-30 days)</option>
             <option value="later">✅ Later (&gt;30 days)</option>

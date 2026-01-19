@@ -119,7 +119,7 @@ useEffect(() => {
             <AlertTriangle className={`w-6 h-6 ${
               readyToCancelCount === 0 && lowUsageCount === 0 ? 'text-green-600' : 'text-red-600'
             }`} />
-            Subscription Health
+            Potential Savings
           </h2>
         </div>
 
